@@ -58,7 +58,7 @@ countdown () {
 # I have a catch-all case for key presses that are NOT a Y or N, which redirect the user through the question again.
 # This is not meant to be an annoyance, but rather a simple way to make sure the user has properly chosen an answer.
 ask_restart () {
-	read -n 1 restart
+	read -s -n 1 restart
 	case $restart in
 		Y*)
 			echo "Beginning restart procedure. Skipping warning about closing running shell."
@@ -66,7 +66,7 @@ ask_restart () {
 			invalid=0
 		;;
 		N*)
-			echo "Thank you for using Giantvince1's Minecraft server startup automater!"
+			echo "Thank you for using Giantvince1's Minecraft server startup automator!"
 			echo "We hope to see you soon! Exiting script in 5..."
 			sleep 1
 			countdown 4
@@ -85,7 +85,7 @@ ask_restart () {
 # Instead, the shell will retain the old copy of the file and continue to use THAT one to try to run the Minecraft server.
 # So, I have to ask if the user plans to modify the file so that I can ensure the script gets stopped and restarted properly.
 ask_modify () {
-	read -n 1 changes
+	read -s -n 1 changes
 	case $changes in
 		Y*)
 			if [[ $loopcounter -gt 1 ]]; then
@@ -125,18 +125,17 @@ ask_modify () {
 # You can edit the text in the echo commands to say what you want and/or need, but keep the meaning similar!
 # Otherwise you may very well confuse someone who uses your modified version of this script.
 after_server_exit () {
-	if [[ $serverexit = 0 ]]; then
+	while [[ $serverexit = 0 ]]; do
 		echo "The server has been shut down. Do you wish to change any variables? (Y/N)"
 		ask_modify
-	else
-		echo "The server has encountered some sort of error. Please check the console logs."
-		echo "This script will NOT be offering you the ability to restart the server."
-		echo "I recommend you look through the server logs and look for errors."
-		echo "This script will exit, however you may still read the server console log."
-		echo "This script exiting itself should not close the terminal window."
-		echo "However, in case that were to happen, there is a failsafe in this script."
-		read -s -n 1 -p "Press any key to exit..."
-	fi
+	done
+	echo "The server has encountered some sort of error. Please check the console logs."
+	echo "This script will NOT be offering you the ability to restart the server."
+	echo "I recommend you look through the server logs and look for errors."
+	echo "This script will exit, however you may still read the server console log."
+	echo "This script exiting itself should not close the terminal window."
+	echo "However, in case that were to happen, there is a failsafe in this script."
+	read -s -n 1 -p "Press any key to exit..."
 }
 
 # This gigantic function is what handles all the pre-start checks for the Minecraft server.
@@ -255,3 +254,4 @@ echo "This script will continue in 15 seconds if you don't press ctrl+C."
 sleep 10
 countdown 5
 server_start
+after_server_exit
