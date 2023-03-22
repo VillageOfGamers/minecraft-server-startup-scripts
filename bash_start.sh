@@ -148,12 +148,13 @@ after_server_exit () {
 server_start () {
 	loopcounter=$((loopcounter+1))
 	if [[ $serverdir = ./ ]]; then
-		touch $jarname
+		test -f $jarname
 		notfound=$?
+		invalidpath=$notfound
 	else
-		cd $serverdir && touch $jarname
+		cd $serverdir && test -f $jarname
 		invalidpath=$?
-		cd $olddir && touch $jarname
+		cd $olddir && test -f $jarname
 		notfound=$?
 	fi
 	if [[ $invalidpath = 0 && $notfound = 0 ]]; then
