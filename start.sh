@@ -22,7 +22,7 @@ serverdir="./"
 # I have the warning enabled by default on this script specifically so that those who need the nudge can understand what may happen.
 # This mainly applies in the case of them running the script directly via an SSH or console terminal, resulting in the script and all children listening for SIGHUP.
 # The screen utility and some direct alternatives hide any SIGHUP that comes from its parent process, and ignores it on its own as well, keeping the programs alive.
-screenwarn=0
+screenwarn=1
 
 # The jarname variable specifies which file the Java runtime executes first. You generaly want this to be a RELATIVE path (i.e. "./server.jar" is a relative path).
 # The -Xms#G argument specifies how much memory to allocate upon starting the Java instance.
@@ -53,7 +53,7 @@ olddir=$(pwd)
 # However, please keep in mind that if you have it set to 1, you ALSO need to grant the user that runs this script the ability to run sudo without password verification.
 # This is so you don't have to store a plaintext password inside a script, eliminating a possible way that someone may be able to compromise your system.
 # If you go that route in order to provide this script the capability to run kill -9 1 (which sends SIGKILL to init), ensure the user this runs as DOES NOT AUTOLOGIN EVER.
-koops=1
+koops=0
 
 # This function is just a wait loop, with the i variable getting set by whichever part of the script calls it.
 # The i variable is the number of seconds to wait via this loop, while printing a countdown each second.
@@ -79,10 +79,10 @@ countdown () {
 # I have left this variable set to 0 so that it does NOT pull the latest JAR from anywhere, so that you can point it where YOU need it to be.
 # I just so happen to have this file set to default to the PaperMC API at this point in time; not everyone in the world uses PaperMC, I get that.
 # The only time you should ever need to change this URL format is if they ever change how the API works, or where you're getting your server JAR from.
-# As of 4/12/2023, the server I have been writing and improving this script for is on version 1.19.3.
+# As of 4/12/2023, the server I have been writing and improving this script for is on version 1.19.4.
 server_start () {
-	download=1
-	mcver="1.19.3"
+	download=0
+	mcver="1.19.4"
 	baseurl="https://api.papermc.io/v2/projects/paper/versions/"$mcver
 	build="$(curl -sX GET "$baseurl"/builds -H 'accept: application/json' | jq '.builds [-1].build')"
 	dlbuild=$baseurl"/builds/"$build"/downloads/paper-"$mcver"-"$build".jar"
