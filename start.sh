@@ -97,8 +97,21 @@ server_start () {
 		echo "Downloading latest Paper server JAR file for version ${mcver}..."
 		wget $dlbuild -O $jarname >/dev/null 2>&1
 	fi
-	touch ./.running
+	test -f ./.running
 	lastexit=$?
+	catch_error
+	case $error in
+		0)
+			running=1
+		;;
+		1)
+			running=0
+		;;
+		*)
+			critical_stop
+		;;
+	esac
+	touch ./.running
 	if [ $lastexit -gt 1 ]; then
 		critical_stop
 	elif [ $lastexit = 1 ]; then
