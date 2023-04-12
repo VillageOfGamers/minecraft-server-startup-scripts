@@ -2,8 +2,9 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+I will only support the latest version of the script at any given moment, as any updates to it are always going to be based on the latest version in the repository.
+
+I will provide support to those who use older versions of the script, but I will not update against older revisions explicitly.
 
 | Version | Supported          |
 | ------- | ------------------ |
