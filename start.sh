@@ -1,9 +1,18 @@
 #!/bin/sh
+# shellcheck disable=SC2164,SC2086,SC2027,SC2269
 
-# YOU MUST KEEP THE TOP LINE OF THIS FILE INTACT! IT TELLS YOUR LINUX INSTALL WHICH SHELL THIS RUNS IN!
+# YOU MUST KEEP THE TOP 2 LINES OF THIS FILE INTACT! LINE 1 TELLS YOUR LINUX INSTALL WHICH SHELL THIS RUNS IN!
+# LINE 2 TELLS SHELLCHECK WHICH EXACT ERRORS TO IGNORE WITHIN THIS FILE! I HAVE DEVELOPED IT WITH POSIX SH IN MIND!
 # Please note the majority of this file's size directly comes from all these comment lines inside it.
 # If you wish to shrink this file, the easiest way to do so, without losing any function, is to cut out the comments.
 # Any and all lines beginning with a # EXCEPT THE TOP ONE may be removed.
+
+# This variable directly specifies whether or not to enable the script's Download Mode logic.
+# If this variable is set to 0, this script will NOT check for or download new server JAR releases.
+# This also means that this script CANNOT ask to re-enable this function if it is disabled here!
+# However, if this toggle is enabled, as per default, you MAY disable it via prompts during execution.
+# All of those prompts will ONLY disable Download Mode on a PER-RUN BASIS however! It will NOT be permanent!
+download=0
 
 # This is the path to the server itself. I recommend having this be an absolute path.
 # The reason I have it showing "./" is to point it to the "current" directory.
@@ -60,7 +69,7 @@ koops=0
 countdown () {
 	i=$1
 	while [ $i -gt 0 ]; do
-		echo "$i..."
+		echo $i"..."
 		i=$((i-1))
 		sleep 1
 	done
@@ -81,21 +90,28 @@ countdown () {
 # The only time you should ever need to change this URL format is if they ever change how the API works, or where you're getting your server JAR from.
 # As of 4/12/2023, the server I have been writing and improving this script for is on version 1.19.4.
 server_start () {
-	download=0
-	mcver="1.19.4"
-	baseurl="https://api.papermc.io/v2/projects/paper/versions/"$mcver
-	build="$(curl -sX GET "$baseurl"/builds -H 'accept: application/json' | jq '.builds [-1].build')"
-	dlbuild=$baseurl"/builds/"$build"/downloads/paper-"$mcver"-"$build".jar"
-	oldbuild=$(grep . ./.version)
-	if [ $oldbuild = $build ] && [ $download = 1 ]; then
-		dlenable=0
+	if [ $download = 1 ]; then
+		mcver="1.19.4"
+		baseurl="https://api.papermc.io/v2/projects/paper/versions/"$mcver
+		build="$(curl -sX GET "$baseurl"/builds -H 'accept: application/json' | jq '.builds [-1].build')"
+		dlbuild=$baseurl"/builds/"$build"/downloads/paper-"$mcver"-"$build".jar"
+		oldbuild=$(grep . ./.version)
+		if [ $oldbuild != $build ]; then
+			echo $build > ./.version
+			echo "Download mode enabled. This script will replace the old one with the new one."
+			echo "If you do not want that to happen, please press CTRL+C and edit download to 0."
+			echo "You have a total of 10 seconds to press CTRL+C to stop this download."
+			countdown 10
+			wget $dlbuild -O $jarname
+		else
+			echo "Download mode enabled. "$jarname" also has no new releases at this time."
+			echo "Disabling download mode for this run only due to the lack of difference."
+			download=0
+		fi
 	else
-		dlenable=1
-	fi
-	echo $build > ./.version
-	if [ $dlenable = 1 ]; then
-		echo "Downloading latest Paper server JAR file for version ${mcver}..."
-		wget $dlbuild -O $jarname >/dev/null 2>&1
+		echo "Download mode disabled. "$jarname" will remain at its current version."
+		echo "All logic surrounding the support of downloading a new version is off."
+		echo "This means no related variables are set, and no related files will be modified."
 	fi
 	test -f ./.running
 	lastexit=$?
@@ -112,10 +128,10 @@ server_start () {
 		;;
 	esac
 	touch ./.running
-	if [ $lastexit -gt 1 ]; then
-		critical_stop
-	elif [ $lastexit = 1 ]; then
-		echo "[ERROR] Touch has run into an error. Could not create running file."
+	lastexit=$?
+	catch_error
+	if [ $error = 1 ]; then
+		echo "[ERROR] Touch has run into an error. Could not create running file!"
 		echo "[ERROR] Please ensure this user account has WRITE access to path:"
 		pwd
 		echo "Press enter to exit..."
@@ -157,39 +173,39 @@ catch_error () {
 # Such an exit would immediately be concerning because test is a literal true/false program; it does nothing else at all.
 critical_stop () {
 	if [ $koops = 1 ]; then
-		echo "[CRITICAL] SOMETHING WENT CATASTROPHICALLY WRONG WITH YOUR SYSTEM!"
-		echo "[CRITICAL] THIS COMPUTER IS NOT FIT TO RUN ANY SIGNIFICANT LOAD AT ALL!"
-		echo "[CRITICAL] CHECK YOUR CPU TEMPERATURE, AND TEST YOUR RAM AS WELL!"
-		echo "[CRITICAL] HELL, AT THIS POINT, TEST EVERY SINGLE PART IN THE SYSTEM ON ITS OWN!"
-		echo "[CRITICAL] IT IS NOT NORMAL AT ALL FOR THE TEST UTILITY TO PRODUCE A $lastexit EXIT CODE!"
-		echo "[CRITICAL] THE FAILING COMMAND LITERALLY ONLY EVER RETURNS A 0 OR 1, THAT IS IT!"
-		echo "[CRITICAL] FOR THIS COMMAND TO RETURN ANYTHING ELSE, A GRIEVOUS ERROR OCCURRED!"
-		echo "[CRITICAL] THIS SCRIPT IS GOING TO COUNT DOWN FOR 60 SECONDS!"
-		echo "[CRITICAL] AFTER THIS COUNTDOWN, THE SCRIPT WILL ATTEMPT TO SHUT DOWN YOUR PC!"
-		echo "[CRITICAL] IT IS CRITICAL THAT YOU CHECK ALL- AND I MEAN ALL- OF ITS PARTS!"
-		echo "[CRITICAL] YOUR MOST LIKELY ERROR IS JUST A CORRUPTED OPERATING SYSTEM DISK."
-		echo "[CRITICAL] HOWEVER! I STILL HIGHLY RECOMMEND AND ENCOURAGE YOU TO INVESTIGATE!"
-		echo "[CRITICAL] EITHER WAY, LEAVING THIS PC RUNNING IN ITS CURRENT STATE IS NOT SAFE!"
-		echo "[CRITICAL] SENDING SIGKILL TO INIT IN 60 SECONDS! THIS WILL CAUSE A KERNEL PANIC!"
-		echo "[CRITICAL] IF YOU REALLY WISH TO STOP THIS SHUTDOWN ATTEMPT, PRESS CTRL+C NOW!"
+		echo "[FATAL] SOMETHING WENT CATASTROPHICALLY WRONG WITH YOUR SYSTEM!"
+		echo "[FATAL] THIS COMPUTER IS NOT FIT TO RUN ANY SIGNIFICANT LOAD AT ALL!"
+		echo "[FATAL] CHECK YOUR CPU TEMPERATURE, AND TEST YOUR RAM AS WELL!"
+		echo "[FATAL] HELL, AT THIS POINT, TEST EVERY SINGLE PART IN THE SYSTEM ON ITS OWN!"
+		echo "[FATAL] IT IS NOT NORMAL AT ALL FOR THE TEST UTILITY TO PRODUCE A $lastexit EXIT CODE!"
+		echo "[FATAL] THE FAILING COMMAND LITERALLY ONLY EVER RETURNS A 0 OR 1, THAT IS IT!"
+		echo "[FATAL] FOR THIS COMMAND TO RETURN ANYTHING ELSE, A GRIEVOUS ERROR OCCURRED!"
+		echo "[FATAL] THIS SCRIPT IS GOING TO COUNT DOWN FOR 60 SECONDS!"
+		echo "[FATAL] AFTER THIS COUNTDOWN, THE SCRIPT WILL ATTEMPT TO SHUT DOWN YOUR PC!"
+		echo "[FATAL] IT IS CRITICAL THAT YOU CHECK ALL- AND I MEAN ALL- OF ITS PARTS!"
+		echo "[FATAL] YOUR MOST LIKELY ERROR IS JUST A CORRUPTED OPERATING SYSTEM DISK."
+		echo "[FATAL] HOWEVER! I STILL HIGHLY RECOMMEND AND ENCOURAGE YOU TO INVESTIGATE!"
+		echo "[FATAL] EITHER WAY, LEAVING THIS PC RUNNING IN ITS CURRENT STATE IS NOT SAFE!"
+		echo "[FATAL] SENDING SIGKILL TO INIT IN 60 SECONDS! THIS WILL CAUSE A KERNEL PANIC!"
+		echo "[FATAL] IF YOU REALLY WISH TO STOP THIS SHUTDOWN ATTEMPT, PRESS CTRL+C NOW!"
 		sleep 45
-		echo "[CRITICAL] YOU HAVE 15 SECONDS REMAINING TO STOP THIS SCRIPT FROM FORCING A PANIC!"
+		echo "[FATAL] YOU HAVE 15 SECONDS REMAINING TO STOP THIS SCRIPT FROM FORCING A PANIC!"
 		countdown 15
 		sudo kill -9 1
 	else
-		echo "[CRITICAL] SOMETHING WENT CATASTROPHICALLY WRONG WITH YOUR SYSTEM!"
-		echo "[CRITICAL] THIS COMPUTER IS NOT FIT TO RUN ANY SIGNIFICANT LOAD AT ALL!"
-		echo "[CRITICAL] CHECK YOUR CPU TEMPERATURE, AND TEST YOUR RAM AS WELL!"
-		echo "[CRITICAL] HELL, AT THIS POINT, TEST EVERY SINGLE PART IN THE SYSTEM ON ITS OWN!"
-		echo "[CRITICAL] IT IS NOT NORMAL AT ALL FOR THE TEST UTILITY TO PRODUCE A $lastexit EXIT CODE!"
-		echo "[CRITICAL] THE FAILING COMMAND LITERALLY ONLY EVER RETURNS A 0 OR 1, THAT IS IT!"
-		echo "[CRITICAL] FOR THIS COMMAND TO RETURN ANYTHING ELSE, A GRIEVOUS ERROR OCCURRED!"
-		echo "[CRITICAL] SINCE THE 'koops' VARIABLE IS NOT SET, THIS SCRIPT WILL NOT KILL PID 1."
-		echo "[CRITICAL] HOWEVER, I STILL HIGHLY RECOMMEND SHUTTING DOWN YOUR SYSTEM AS SOON AS POSSIBLE!"
-		echo "[CRITICAL] THIS SYSTEM SHOULD NOT BE IN PRODUCTION USE BEYOND THIS POINT!"
-		echo "[CRITICAL] THERE IS A VERY VALID REASON EVERY SINGLE ONE OF THESE LINES IS MARKED CRITICAL!"
-		echo "[CRITICAL] THIS SCRIPT IS NOW GOING TO EXIT! I HIGHLY SUGGEST RUNNING 'sudo poweroff'!"
-		echo "[CRITICAL] PLEASE PRESS ENTER TO EXIT AFTER YOU HAVE READ THIS TEXT IN ITS ENTIRETY!"
+		echo "[FATAL] SOMETHING WENT CATASTROPHICALLY WRONG WITH YOUR SYSTEM!"
+		echo "[FATAL] THIS COMPUTER IS NOT FIT TO RUN ANY SIGNIFICANT LOAD AT ALL!"
+		echo "[FATAL] CHECK YOUR CPU TEMPERATURE, AND TEST YOUR RAM AS WELL!"
+		echo "[FATAL] HELL, AT THIS POINT, TEST EVERY SINGLE PART IN THE SYSTEM ON ITS OWN!"
+		echo "[FATAL] IT IS NOT NORMAL AT ALL FOR THE TEST UTILITY TO PRODUCE A "$lastexit" EXIT CODE!"
+		echo "[FATAL] THE FAILING COMMAND LITERALLY ONLY EVER RETURNS A 0 OR 1, THAT IS IT!"
+		echo "[FATAL] FOR THIS COMMAND TO RETURN ANYTHING ELSE, A GRIEVOUS ERROR OCCURRED!"
+		echo "[FATAL] SINCE THE 'koops' VARIABLE IS NOT SET, THIS SCRIPT WILL NOT SIGKILL PID 1."
+		echo "[FATAL] HOWEVER, I STILL HIGHLY RECOMMEND SHUTTING DOWN YOUR SYSTEM AS SOON AS POSSIBLE!"
+		echo "[FATAL] THIS SYSTEM SHOULD NOT BE IN PRODUCTION USE BEYOND THIS POINT!"
+		echo "[FATAL] THERE IS A VERY VALID REASON EVERY SINGLE ONE OF THESE LINES IS MARKED CRITICAL!"
+		echo "[FATAL] THIS SCRIPT IS NOW GOING TO EXIT! I HIGHLY SUGGEST RUNNING 'sudo poweroff'!"
+		echo "[FATAL] PLEASE PRESS ENTER TO EXIT AFTER YOU HAVE READ THIS TEXT IN ITS ENTIRETY!"
 		read -r nil
 		exit
 	fi
@@ -216,6 +232,167 @@ ask_restart () {
 		;;
 		*)
 			echo "Invalid choice. Your choices are yes (Y) or no (N)."
+			invalid=1
+		;;
+	esac
+}
+
+# This function is designed to query, under specific circumstances, if the user wishes to create a fresh Minecraft server.
+# This function will only be called if at least one of these conditions are met (one per line):
+# a) no Minecraft server is found in $serverdir, but one was found in $olddir, and $serverdir is not ./;
+# b) no Minecraft server is found at all, in either $serverdir or $olddir
+# Any condition which results in this script thinking there is a valid server at $serverdir will prevent this function entirely.
+# This is mainly via a check to ensure the path is browsable, and a file named $jarfile exists in the directory.
+newserver () {
+	read -r newserver
+	case $newserver in
+		y*)
+			echo "Okay, a NEW Minecraft server instance will be started within the folder:"
+			pwd
+			echo "If this is NOT desired, you will have 10 seconds to press CTRL+C."
+			echo "This will give you time to stop the attempt before the download begins."
+			countdown 10
+			echo "No CTRL+C received, continuing new instance setup..."
+			invalid=0
+		;;
+		n*)
+			if [ "$(pwd)" = "$olddir" ]; then
+				echo "You are ALREADY in the old directory! Specifying no here means NO SERVER WILL BE MADE!"
+				echo "Are you 100% sure you wish to stop the creation of a fresh Minecraft server? (Y/N)"
+				read -r forceno
+				case $forceno in
+					y*)
+						echo "You have forbidden this script to create ANY new servers despite none existing."
+						echo "Exiting script due to no valid server found, AND new server init forced off."
+						echo "Press enter to exit..."
+						read -r nil
+						invalid=0
+						exit
+					;;
+					n*)
+						echo "You have indicated you DO wish to create a new server, but are unsure where."
+						echo "Because of this, I will not proceed as I am; however I WILL display my variables."
+						echo "I am doing this so that you may be able to receive support from the author, Giantvince1."
+						echo "serverdir: "$serverdir
+						echo "olddir: "$olddir
+						echo "download: "$download
+						echo "mcver: "$mcver
+						echo "baseurl: "$baseurl
+						echo "build: "$build
+						echo "dlbuild: "$dlbuild
+						echo "jarname: "$jarname
+						echo "koops: "$koops
+						echo "Please provide ALL output from this script if you require assistance with a problem!"
+						echo "I have to be able to determine WHERE the script failed in particular to know what to look at."
+						echo "I am 100% certain I did not create this thing in a day, nor do I have it memorized."
+						echo "Press enter to exit..."
+						read -r nil
+						invalid=0
+						exit
+					;;
+					*)
+						echo "[WARN] Invalid choice. Your options are yes (Y) or no (N)."
+						invalid=1
+					;;
+				esac
+			else
+				echo "Per your request, this server will NOT be attempting to start a new server here."
+				echo "This script will instead start the server found in the directory:"
+				cd $olddir
+				pwd
+				echo "Successfully went back to the above path, continuing execution of script..."
+			fi
+			invalid=0
+		;;
+		*)
+			echo "[WARN] Invalid choice. Your options are yes (Y) or no (N)."
+			invalid=1
+		;;
+	esac
+}
+
+# This function is here in case $serverdir is NOT ./ and BOTH $serverdir AND $olddir do NOT contain a valid server.
+# This is purely for the case where one wants to start a new server, but 2 known paths can be chosen, and neither has a valid server.
+# That is ALL this function does, is gather that answer, and act based on the answer.
+whichpath () {
+	read -r whichpath
+	case $whichpath in
+		o*)
+			echo "You have chosen the old directory. Changing to directory and printing path..."
+			echo "Current path: "$olddir
+			cd $olddir
+			echo "Would you like to truly start a new server here in this path? (Y/N)"
+			invalid=0
+			newserver
+			while [ $invalid = 1 ]; do
+				newserver
+			done
+		;;
+		n*)
+			echo "You have chosen the new directory. Changing to directory and printing path..."
+			echo "Current path: "$serverdir
+			cd $serverdir
+			echo "Would you like to truly start a new server here in this path? (Y/N)"
+			invalid=0
+			newserver
+			while [ $invalid = 1 ]; do
+				newserver
+			done
+		;;
+		*)
+			echo "Invalid choice. Your choices are old (O) or new (N)."
+			invalid=1
+		;;
+	esac
+}
+
+# This function is designed to ask whether to try to create the path to a specified server directory.
+# Please note this script can only operate under the context of the user you run it as yourself!
+# This means any path entered into the $serverdir variable MUST be accessible by the current user!
+# If it is not currently a path that exists, then the final existing directory leading to it MUST be WRITABLE by the user!
+createpath () {
+	read -r createpath
+	case $createpath in
+		y*)
+			echo "Attempting to start up and initialize NEW server instance..."
+			invalid=0
+			mkdir -p $serverdir
+			lastexit=$?
+			catch_error
+			inaccessible=$error
+			if [ $inaccessible = 1 ]; then
+				echo "[ERROR] Unable to create path to the specified directory!"
+				echo "[ERROR] Specified path: "$serverdir
+				echo "[ERROR] The only path I can access directly is the location I was started at!"
+				echo "[ERROR] Since I am unable to start a server which I cannot access,"
+				echo "[ERROR] and you, the user, have specified to try the specified path anyway,"
+				echo "[ERROR] I am NOT going to go to my starting path and start the one that lives there."
+				echo "Please press enter to exit..."
+				read -r nil
+				exit
+			else
+				cd $serverdir
+				echo "The specified path was successfully created, and your user has write access!"
+				echo "Current directory: "$serverdir
+				echo "Old directory: "$olddir
+				echo "Continuing with startup script execution..."
+				echo "Do you wish to start a NEW Minecraft server instance in this directory? (Y/N)"
+				newserver
+				while [ $invalid = 1 ]; do
+					newserver
+				done
+			fi
+		;;
+		n*)
+			echo "Download mode has been disabled for THIS RUN per user request."
+			echo "Please edit the serverdir variable and/or the download variable."
+			echo "Now changing directory back to: "$olddir
+			cd $olddir
+			echo "Now continuing script execution from the old directory..."
+			invalid=0
+		;;
+		*)
+			echo "[WARN] Invalid choice. Your options are yes (Y) or no (N)."
 			invalid=1
 		;;
 	esac
@@ -295,16 +472,22 @@ start_function () {
 		notfound=$error
 		invalidpath=$error
 	else
-		cd $serverdir && test -f $jarname
+		cd $serverdir
 		lastexit=$?
 		catch_error
-		invalidpath=$error
-		cd "$olddir" && test -f $jarname
+		inaccessible=$error
+		if [ $inaccessible = 0 ]; then
+			test -f $jarname
+			lastexit=$?
+			catch_error
+			invalidpath=$error
+		fi
+		cd $olddir && test -f $jarname
 		lastexit=$?
 		catch_error
 		notfound=$error
 	fi
-	if [ $invalidpath = 0 ] && [ $notfound = 0 ]; then
+	if [ $invalidpath = 0 ]; then
 		test -f ./eula.txt
 		lastexit=$?
 		catch_error
@@ -313,29 +496,94 @@ start_function () {
 		echo "[WARN] This script could locate your Minecraft server."
 		echo "[WARN] However, it found the server where you started the script from."
 		echo "[WARN] This should not be intentional. Printing current variables..."
-		echo "[WARN] Please set the serverdir variable to the correct path."
-		echo "serverdir: $serverdir"
-		echo "olddir: $olddir"
-		echo "jarname: $jarname"
-		echo "arglist: $arglist"
-		echo "Press ctrl+C now if you wish to fix the issue, or press enter to continue."
+		echo "[WARN] Please ensure the following variables are all correct:"
+		echo "serverdir: "$serverdir
+		echo "olddir: "$olddir
+		echo "jarname: "$jarname
+		echo "arglist: "$arglist
+		echo "[WARN] Press ctrl+C now if you wish to fix the issue, or press enter to continue."
 		read -r nil
-		echo "Continuing execution..."
+		if [ $download = 1 ]; then
+			if [ $inaccessible = 1 ]; then
+				echo "[WARN] The specified server directory is currently inaccessible to this user."
+				echo "[WARN] Please double-check you have specified the right path to locate the server."
+				echo "Specified path: "$serverdir
+				echo "Do you want this script to create this path for you, if able? (Y/N)"
+				echo "Please be aware that a valid server already does exist."
+				echo "Existing server path: "$olddir
+				echo "If you wish to run the server already available, please answer no here."
+				createpath
+				while [ $invalid = 1 ]; do
+					createpath
+				done
+			else
+				cd $serverdir
+				echo "[WARN] This script is capable of navigating to the specified path."
+				echo "[WARN] However, said path does NOT currently hold a Minecraft server."
+				echo "[WARN] Please double-check that the download and serverdir variables are of your choosing."
+				echo "Specified path: "$serverdir
+				echo "Do you wish to start a NEW Minecraft server instance in this directory? (Y/N)"
+				newserver
+				while [ $invalid = 1 ]; do
+					newserver
+				done
+			fi
+		else
+			echo "[WARN] This script has Download Mode disabled at this time."
+			echo "[WARN] Since it is disabled, I cannot proceed with starting a new server from scratch."
+			echo "[WARN] However, I did find an existing server on this machine!"
+			echo "User-specified path: "$serverdir
+			echo "Current working path: "$olddir
+			echo "Changing path to the old directory and continuing script execution..."
+			cd $olddir
+		fi
 		test -f ./eula.txt
 		lastexit=$?
 		catch_error
 		firstrun=$error
 	else
-		echo "[ERROR] This script cannot locate your Minecraft server!"
-		echo "[ERROR] Printing current script variables so the issue may be found..."
-		echo "serverdir: $serverdir"
-		echo "olddir: $olddir"
-		echo "jarname: $jarname"
-		echo "arglist: $arglist"
-		echo "Please ensure these variables are correct, and modify them accordingly."
-		echo "Press enter to exit..."
-		read -r nil
-		exit
+		if [ $download = 1 ]; then
+			if [ $serverdir = ./ ]; then
+				echo "Download Mode is currently enabled. Downloading latest server jar to path:"
+				pwd
+				echo "Current server JAR name: "$jarname
+				echo "Do you wish to start a new server in the above folder? (Y/N)"
+				newserver
+				while [ $invalid = 1 ]; do
+					newserver
+				done
+			else
+				echo "[WARN] This script cannot locate your Minecraft server!"
+				echo "[WARN] Printing current script variables so the issue may be found..."
+				echo "serverdir: "$serverdir
+				echo "olddir: "$olddir
+				echo "jarname: "$jarname
+				echo "arglist: "$arglist
+				if [ $inaccessible = 1 ]; then
+					echo "Would you like me to try to create a path to your specified directory? (Y/N)"
+					echo "Specified path: "$serverdir
+					createpath
+					while [ $invalid = 1 ]; do
+						createpath
+					done
+				else
+					echo "I am able to traverse into the path you have specified previously."
+					echo "However neither that path nor where this script was ran from have a valid server."
+					echo "Which path did you intend for me to use for a Minecraft server? (O/N) [O=old,N=new]"
+					whichpath
+					while [ $invalid = 1 ]; do
+						whichpath
+					done
+				fi
+			fi
+		else
+			echo "Download Mode is disabled globally in the script. Cannot download server JAR file."
+			echo "Also, no valid server exists based on the settings of this script."
+			echo "Printing variables so any possible issues may be found..."
+			echo "serverdir: "$serverdir
+			echo "olddir: "$olddir
+			echo "jarname: "$jarname
+		fi
 	fi
 	if [ $firstrun = 1 ]; then
 		echo "Welcome to the Minecraft community, and your new Minecraft server!"
@@ -344,8 +592,7 @@ start_function () {
 		echo "Do not delete the eula.txt file, as the server checks for it on every start."
 		echo "You must also set the single variable named eula in it to true."
 		echo "Otherwise the server will refuse to run entirely, and tell you why."
-		sleep 5
-		countdown 5
+		countdown 10
 		echo "First run commencing..."
 		server_start
 		echo "The first run is now over! Please accept the EULA by editing the eula.txt file."
@@ -423,3 +670,4 @@ script_init () {
 	after_server_exit
 }
 script_init
+nil=$nil
