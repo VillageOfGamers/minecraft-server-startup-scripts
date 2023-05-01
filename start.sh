@@ -2,7 +2,7 @@
 # shellcheck disable=SC2164,SC2086,SC2027,SC2269
 
 # YOU MUST KEEP THE TOP 2 LINES OF THIS FILE INTACT! LINE 1 TELLS YOUR LINUX INSTALL WHICH SHELL THIS RUNS IN!
-# LINE 2 TELLS SHELLCHECK WHICH EXACT ERRORS TO IGNORE WITHIN THIS FILE! I HAVE DEVELOPED IT WITH POSIX SH IN MIND!
+# LINE 2 TELLS SHELLCHECK WHICH EXACT ISSUES TO IGNORE WITHIN THIS FILE! I HAVE DEVELOPED IT WITH POSIX SH IN MIND!
 # Please note the majority of this file's size directly comes from all these comment lines inside it.
 # If you wish to shrink this file, the easiest way to do so, without losing any function, is to cut out the comments.
 # Any and all lines beginning with a # EXCEPT THE TOP ONE may be removed.
@@ -99,14 +99,27 @@ server_start () {
 		if [ $oldbuild != $build ]; then
 			echo $build > ./.version
 			echo "Download mode enabled. This script will replace the old one with the new one."
-			echo "If you do not want that to happen, please press CTRL+C and edit download to 0."
-			echo "You have a total of 10 seconds to press CTRL+C to stop this download."
-			countdown 10
-			wget $dlbuild -O $jarname
+			echo "Do you wish to continue with the attempt to download the latest version? (Y/N)"
+			read -r keepdl
+			case $keepdl in
+				n*)
+					echo "Download mode disabled by user choice. Halting download of new version."
+				y*)
+					echo "Download mode confirmed by user. Continuing with download of latest JAR."
+					wget $dlbuild -O $jarname > /dev/null 2>&1
+					if [ $? = 0 ]; then
+						echo "Download of latest server version successful. Proceeding with launch."
+					else
+						echo "Download of latest version failed. This script cannot continue from here."
+						echo "Please double-check the download-related variables are correct in the script."
+						echo "Please replace "$jarname" with a valid copy, then re-execute this script."
+						echo "If you do not want to enable download mode, then set the download variable to 0."
+						echo "This script is exiting in 5..."
+						countdown 4
+					
 		else
 			echo "Download mode enabled. "$jarname" also has no new releases at this time."
 			echo "Disabling download mode for this run only due to the lack of difference."
-			download=0
 		fi
 	else
 		echo "Download mode disabled. "$jarname" will remain at its current version."
@@ -171,14 +184,21 @@ catch_error () {
 # By that I don't mean trying to run ls / and getting error 2 as a normal user; THAT is expected.
 # What I DO mean is, something like the test command exiting with anything higher than 1.
 # Such an exit would immediately be concerning because test is a literal true/false program; it does nothing else at all.
+# grep is another example; it only returns a 0, 1, or 2 depending on the reason for failure, or if it succeeded.
+# This is why, just in case grep ever does fail with 2, this script will NOT try to send SIGKILL to PID 1.
+# This script is only testing after runs of the "test" utility and "grep" utility, it doesn't test for other items at this time.
+# Even then, it's impossible to know if this section can take care of the error if such an error DOES occur.
+# This is because, if the test utility does happen to raise a known bogus error, this portion may not recognize the bogus error.
+# This would be due to the fact that "[" (yes, that bracket just left of this text) is also the "test" utility.
+# Some systems symlink the two together, however others may have actual separate files for each. They both do the exact same thing.
 critical_stop () {
 	if [ $koops = 1 ]; then
 		echo "[FATAL] SOMETHING WENT CATASTROPHICALLY WRONG WITH YOUR SYSTEM!"
 		echo "[FATAL] THIS COMPUTER IS NOT FIT TO RUN ANY SIGNIFICANT LOAD AT ALL!"
 		echo "[FATAL] CHECK YOUR CPU TEMPERATURE, AND TEST YOUR RAM AS WELL!"
 		echo "[FATAL] HELL, AT THIS POINT, TEST EVERY SINGLE PART IN THE SYSTEM ON ITS OWN!"
-		echo "[FATAL] IT IS NOT NORMAL AT ALL FOR THE TEST UTILITY TO PRODUCE A $lastexit EXIT CODE!"
-		echo "[FATAL] THE FAILING COMMAND LITERALLY ONLY EVER RETURNS A 0 OR 1, THAT IS IT!"
+		echo "[FATAL] IT IS NOT NORMAL AT ALL FOR THE LAST COMMAND TO PRODUCE A $lastexit EXIT CODE!"
+		echo "[FATAL] THE FAILING COMMAND LITERALLY ONLY EVER RETURNS A 0, 1, OR 2!"
 		echo "[FATAL] FOR THIS COMMAND TO RETURN ANYTHING ELSE, A GRIEVOUS ERROR OCCURRED!"
 		echo "[FATAL] THIS SCRIPT IS GOING TO COUNT DOWN FOR 60 SECONDS!"
 		echo "[FATAL] AFTER THIS COUNTDOWN, THE SCRIPT WILL ATTEMPT TO SHUT DOWN YOUR PC!"
@@ -197,8 +217,8 @@ critical_stop () {
 		echo "[FATAL] THIS COMPUTER IS NOT FIT TO RUN ANY SIGNIFICANT LOAD AT ALL!"
 		echo "[FATAL] CHECK YOUR CPU TEMPERATURE, AND TEST YOUR RAM AS WELL!"
 		echo "[FATAL] HELL, AT THIS POINT, TEST EVERY SINGLE PART IN THE SYSTEM ON ITS OWN!"
-		echo "[FATAL] IT IS NOT NORMAL AT ALL FOR THE TEST UTILITY TO PRODUCE A "$lastexit" EXIT CODE!"
-		echo "[FATAL] THE FAILING COMMAND LITERALLY ONLY EVER RETURNS A 0 OR 1, THAT IS IT!"
+		echo "[FATAL] IT IS NOT NORMAL AT ALL FOR THE LAST COMMAND TO PRODUCE A $lastexit EXIT CODE!"
+		echo "[FATAL] THE FAILING COMMAND LITERALLY ONLY EVER RETURNS A 0, 1, OR 2!"
 		echo "[FATAL] FOR THIS COMMAND TO RETURN ANYTHING ELSE, A GRIEVOUS ERROR OCCURRED!"
 		echo "[FATAL] SINCE THE 'koops' VARIABLE IS NOT SET, THIS SCRIPT WILL NOT SIGKILL PID 1."
 		echo "[FATAL] HOWEVER, I STILL HIGHLY RECOMMEND SHUTTING DOWN YOUR SYSTEM AS SOON AS POSSIBLE!"
