@@ -97,18 +97,20 @@ server_start () {
 		dlbuild=$baseurl"/builds/"$build"/downloads/paper-"$mcver"-"$build".jar"
 		oldbuild=$(grep . ./.version)
 		if [ $oldbuild != $build ]; then
-			echo $build > ./.version
 			echo "Download mode enabled. This script will replace the old one with the new one."
 			echo "Do you wish to continue with the attempt to download the latest version? (Y/N)"
 			read -r keepdl
 			case $keepdl in
 				n*)
 					echo "Download mode disabled by user choice. Halting download of new version."
+					invalid=0
+				;;
 				y*)
 					echo "Download mode confirmed by user. Continuing with download of latest JAR."
 					wget $dlbuild -O $jarname > /dev/null 2>&1
 					if [ $? = 0 ]; then
 						echo "Download of latest server version successful. Proceeding with launch."
+						echo $build > ./.version
 					else
 						echo "Download of latest version failed. This script cannot continue from here."
 						echo "Please double-check the download-related variables are correct in the script."
@@ -116,7 +118,14 @@ server_start () {
 						echo "If you do not want to enable download mode, then set the download variable to 0."
 						echo "This script is exiting in 5..."
 						countdown 4
-					
+					fi
+					invalid=0
+				;;
+				*)
+					echo "Invalid choice. Your choices are yes (Y) or no (N)."
+					invalid=1
+				;;
+			esac
 		else
 			echo "Download mode enabled. "$jarname" also has no new releases at this time."
 			echo "Disabling download mode for this run only due to the lack of difference."
