@@ -12,7 +12,7 @@
 # This also means that this script CANNOT ask to re-enable this function if it is disabled here!
 # However, if this toggle is enabled, as per default, you MAY disable it via prompts during execution.
 # All of those prompts will ONLY disable Download Mode on a PER-RUN BASIS however! It will NOT be permanent!
-download=0
+download=1
 
 # This is the path to the server itself. I recommend having this be an absolute path.
 # The reason I have it showing "./" is to point it to the "current" directory.
