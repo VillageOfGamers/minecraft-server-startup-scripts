@@ -1,11 +1,16 @@
 #!/bin/sh
-# shellcheck disable=SC2164,SC2086,SC2027,SC2269
+# shellcheck disable=SC2164,SC2086,SC2027,SC2269,SC2034,SC2181
 
 # YOU MUST KEEP THE TOP 2 LINES OF THIS FILE INTACT! LINE 1 TELLS YOUR LINUX INSTALL WHICH SHELL THIS RUNS IN!
 # LINE 2 TELLS SHELLCHECK WHICH EXACT ISSUES TO IGNORE WITHIN THIS FILE! I HAVE DEVELOPED IT WITH POSIX SH IN MIND!
 # Please note the majority of this file's size directly comes from all these comment lines inside it.
 # If you wish to shrink this file, the easiest way to do so, without losing any function, is to cut out the comments.
 # Any and all lines beginning with a # EXCEPT THE TOP ONE may be removed.
+
+# Please set this variable based on whether or not you are running this script in an interactive mode.
+# By interactive, I mean you, or another human, is interacting DIRECTLY with the script!
+# If a human is NOT what is interacting with this script, then MAKE SURE THIS IS SET TO ZERO!
+interactive=1
 
 # This variable directly specifies whether or not to enable the script's Download Mode logic.
 # If this variable is set to 0, this script will NOT check for or download new server JAR releases.
@@ -22,38 +27,12 @@ download=1
 # The script will complain to you if that happens and this variable is not "./", but it will allow you to continue still.
 serverdir="./"
 
-# This is the argument list the server starts with. I recommend ONLY changing the options in the arglist and jarname variables.
-# The rest of the arguments have been fine-tuned by the Minecraft community to improve garbage collection timing.
-# This results in overall better performance of the server and nearly completely removes the lag spikes you would otherwise see.
-
 # The screenwarn variable is just a quick toggle I built in to enable or disable the parent/child process relationship in Linux and other POSIX OSes.
 # Set it to 0 here in order to disable the warning, or set it to 1 (which is the default) in order to enable the warning.
 # I have the warning enabled by default on this script specifically so that those who need the nudge can understand what may happen.
 # This mainly applies in the case of them running the script directly via an SSH or console terminal, resulting in the script and all children listening for SIGHUP.
 # The screen utility and some direct alternatives hide any SIGHUP that comes from its parent process, and ignores it on its own as well, keeping the programs alive.
 screenwarn=1
-
-# The jarname variable specifies which file the Java runtime executes first. You generaly want this to be a RELATIVE path (i.e. "./server.jar" is a relative path).
-# The -Xms#G argument specifies how much memory to allocate upon starting the Java instance.
-# The -Xmx#G argument specifies the MAXIMUM amount of memory to allocate to the Java instance, NOT including overhead.
-# The overhead you see on this will be around 256MB, give or take.
-
-# I recommend leaving 1GB of RAM or more available if you are using Linux without a graphical environment.
-# If you are using a desktop environment in Linux, leave 2GB of RAM or more available for the OS.
-# This script is NOT usable in Windows; it is expressly designed with the Linux BASH shell in mind.
-jarname="./server.jar"
-arglist="-Xms8G -Xmx16G -jar $jarname"
-
-# THESE VARIABLES ARE NOT TO BE TOUCHED UNLESS YOU KNOW EXACTLY WHAT YOU ARE DOING!
-# These arguments for the Java instance have been hand-tuned by the Minecraft community to provide optimal performance of the server.
-# The user-adjustable argument list is ABOVE these comment lines; those control how much RAM it can use, and the name of the JAR to launch.
-gctuning="-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1 -Dusing.aikars.flags=https://mcflags.emc.gs -Daikars.new.flags=true"
-fullarglist="$gctuning $arglist"
-
-# This olddir variable is to store the initial working directory this script got launched from.
-# This is because the script DOES change which directory the shell uses if the serverdir variable above is NOT set to ./ per its default.
-# Note: This does NOT mean the directory the FILE sits in, it means the path your SHELL'S current working directory was at the time this script got started.
-olddir=$(pwd)
 
 # This koops variable dictates whether or not the script will attempt to kill PID 1 (the init system) using SIGKILL.
 # Killing PID 1 in such a manner will cause a kernel panic every single time, and without fail.
@@ -63,6 +42,48 @@ olddir=$(pwd)
 # This is so you don't have to store a plaintext password inside a script, eliminating a possible way that someone may be able to compromise your system.
 # If you go that route in order to provide this script the capability to run kill -9 1 (which sends SIGKILL to init), ensure the user this runs as DOES NOT AUTOLOGIN EVER.
 koops=0
+
+# This is the argument list the server starts with. I recommend ONLY changing the options in the arglist and jarname variables.
+# The rest of the arguments have been fine-tuned by the Minecraft community to improve garbage collection timing.
+# This results in overall better performance of the server and nearly completely removes the lag spikes you would otherwise see.
+
+# The jarname variable specifies which file the Java runtime executes first. You generaly want this to be a RELATIVE path (i.e. "./server.jar" is a relative path).
+# The -Xms#G argument specifies how much memory to allocate upon starting the Java instance.
+# The -Xmx#G argument specifies the MAXIMUM amount of memory to allocate to the Java instance, NOT including overhead.
+# The overhead you see on this will be around 256MB, give or take.
+
+# I recommend leaving 1GB of RAM or more available if you are using Linux without a graphical environment.
+# If you are using a desktop environment in Linux, leave 2GB of RAM or more available for the OS.
+# This script is NOT usable in Windows; it is expressly designed with the Linux shell in mind.
+# Please edit arglist to allocate the appropriate amount of RAM for YOUR specific system!
+# The general consensus is that you shouldn't need more than 8GB of RAM unless some of your plugins are going nuts (Dynmap takes a lot for example).
+# You may expand the RAM capacity further if you're REALLY wanting to stretch how much data FAWE (or normal WorldEdit) can hold in the buffer at one time.
+# Also see the comments for fullarglist below; these tips are necessary!
+jarname="./server.jar"
+arglist="-Xms16G -Xmx16G -jar $jarname"
+
+# THESE VARIABLES ARE NOT TO BE TOUCHED UNLESS YOU KNOW EXACTLY WHAT YOU ARE DOING!
+# These arguments for the Java instance have been hand-tuned by the Minecraft community to provide optimal performance of the server.
+# The user-adjustable argument list is ABOVE these comment lines; those control how much RAM it can use, and the name of the JAR to launch.
+gctuningbig="-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=40 -XX:G1MaxNewSizePercent=50 -XX:G1HeapRegionSize=16M -XX:G1ReservePercent=15 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=20 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1"
+gctuningsmall="-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1"
+
+# If you are using this to start a Minecraft server with LESS THAN 12GB OF RAM, please use gctuningsmall instead of gctuningbig.
+# gctuningsmall is set up so that the server doesn't get starved of RAM on lower RAM allocation, and is beneficial for a low-RAM system.
+fullarglist="$gctuningbig $arglist"
+
+# This olddir variable is to store the initial working directory this script got launched from.
+# This is because the script DOES change which directory the shell uses if the serverdir variable above is NOT set to ./ per its default.
+# Note: This does NOT mean the directory the FILE sits in, it means the path your SHELL'S current working directory was at the time this script got started.
+olddir=$(pwd)
+
+base_dl_checks () {
+	mcver="1.19.4"
+	baseurl="https://api.papermc.io/v2/projects/paper/versions/"$mcver
+	build="$(curl -sX GET "$baseurl"/builds -H 'accept: application/json' | jq '.builds [-1].build')"
+	dlbuild=$baseurl"/builds/"$build"/downloads/paper-"$mcver"-"$build".jar"
+	oldbuild=$(grep . ./.version)
+}
 
 # This function is just a wait loop, with the i variable getting set by whichever part of the script calls it.
 # The i variable is the number of seconds to wait via this loop, while printing a countdown each second.
@@ -91,11 +112,7 @@ countdown () {
 # As of 4/12/2023, the server I have been writing and improving this script for is on version 1.19.4.
 server_start () {
 	if [ $download = 1 ]; then
-		mcver="1.19.4"
-		baseurl="https://api.papermc.io/v2/projects/paper/versions/"$mcver
-		build="$(curl -sX GET "$baseurl"/builds -H 'accept: application/json' | jq '.builds [-1].build')"
-		dlbuild=$baseurl"/builds/"$build"/downloads/paper-"$mcver"-"$build".jar"
-		oldbuild=$(grep . ./.version)
+		base_dl_checks
 		if [ $oldbuild != $build ]; then
 			echo "Download mode enabled. This script will replace the old one with the new one."
 			echo "Do you wish to continue with the attempt to download the latest version? (Y/N)"
@@ -116,8 +133,8 @@ server_start () {
 						echo "Please double-check the download-related variables are correct in the script."
 						echo "Please replace "$jarname" with a valid copy, then re-execute this script."
 						echo "If you do not want to enable download mode, then set the download variable to 0."
-						echo "This script is exiting in 5..."
-						countdown 4
+						echo "This script will now exit."
+						exit 2
 					fi
 					invalid=0
 				;;
@@ -156,9 +173,8 @@ server_start () {
 		echo "[ERROR] Touch has run into an error. Could not create running file!"
 		echo "[ERROR] Please ensure this user account has WRITE access to path:"
 		pwd
-		echo "Press enter to exit..."
-		read -r nil
-		exit
+		echo "This script will now exit."
+		exit 2
 	else
 		java $fullarglist
 		serverexit=$?
@@ -201,14 +217,14 @@ catch_error () {
 # This would be due to the fact that "[" (yes, that bracket just left of this text) is also the "test" utility.
 # Some systems symlink the two together, however others may have actual separate files for each. They both do the exact same thing.
 critical_stop () {
-	if [ $koops = 1 ]; then
-		echo "[FATAL] SOMETHING WENT CATASTROPHICALLY WRONG WITH YOUR SYSTEM!"
-		echo "[FATAL] THIS COMPUTER IS NOT FIT TO RUN ANY SIGNIFICANT LOAD AT ALL!"
-		echo "[FATAL] CHECK YOUR CPU TEMPERATURE, AND TEST YOUR RAM AS WELL!"
-		echo "[FATAL] HELL, AT THIS POINT, TEST EVERY SINGLE PART IN THE SYSTEM ON ITS OWN!"
-		echo "[FATAL] IT IS NOT NORMAL AT ALL FOR THE LAST COMMAND TO PRODUCE A $lastexit EXIT CODE!"
-		echo "[FATAL] THE FAILING COMMAND LITERALLY ONLY EVER RETURNS A 0, 1, OR 2!"
-		echo "[FATAL] FOR THIS COMMAND TO RETURN ANYTHING ELSE, A GRIEVOUS ERROR OCCURRED!"
+	echo "[FATAL] SOMETHING WENT CATASTROPHICALLY WRONG WITH YOUR SYSTEM!"
+	echo "[FATAL] THIS COMPUTER IS NOT FIT TO RUN ANY SIGNIFICANT LOAD AT ALL!"
+	echo "[FATAL] CHECK YOUR CPU TEMPERATURE, AND TEST YOUR RAM AS WELL!"
+	echo "[FATAL] HELL, AT THIS POINT, TEST EVERY SINGLE PART IN THE SYSTEM ON ITS OWN!"
+	echo "[FATAL] IT IS NOT NORMAL AT ALL FOR THE LAST COMMAND TO PRODUCE A $lastexit EXIT CODE!"
+	echo "[FATAL] THE FAILING COMMAND LITERALLY ONLY EVER RETURNS A 0, 1, OR 2!"
+	echo "[FATAL] FOR THIS COMMAND TO RETURN ANYTHING ELSE, A GRIEVOUS ERROR OCCURRED!"
+		if [ $koops = 1 ]; then
 		echo "[FATAL] THIS SCRIPT IS GOING TO COUNT DOWN FOR 60 SECONDS!"
 		echo "[FATAL] AFTER THIS COUNTDOWN, THE SCRIPT WILL ATTEMPT TO SHUT DOWN YOUR PC!"
 		echo "[FATAL] IT IS CRITICAL THAT YOU CHECK ALL- AND I MEAN ALL- OF ITS PARTS!"
@@ -222,21 +238,12 @@ critical_stop () {
 		countdown 15
 		sudo kill -9 1
 	else
-		echo "[FATAL] SOMETHING WENT CATASTROPHICALLY WRONG WITH YOUR SYSTEM!"
-		echo "[FATAL] THIS COMPUTER IS NOT FIT TO RUN ANY SIGNIFICANT LOAD AT ALL!"
-		echo "[FATAL] CHECK YOUR CPU TEMPERATURE, AND TEST YOUR RAM AS WELL!"
-		echo "[FATAL] HELL, AT THIS POINT, TEST EVERY SINGLE PART IN THE SYSTEM ON ITS OWN!"
-		echo "[FATAL] IT IS NOT NORMAL AT ALL FOR THE LAST COMMAND TO PRODUCE A $lastexit EXIT CODE!"
-		echo "[FATAL] THE FAILING COMMAND LITERALLY ONLY EVER RETURNS A 0, 1, OR 2!"
-		echo "[FATAL] FOR THIS COMMAND TO RETURN ANYTHING ELSE, A GRIEVOUS ERROR OCCURRED!"
 		echo "[FATAL] SINCE THE 'koops' VARIABLE IS NOT SET, THIS SCRIPT WILL NOT SIGKILL PID 1."
 		echo "[FATAL] HOWEVER, I STILL HIGHLY RECOMMEND SHUTTING DOWN YOUR SYSTEM AS SOON AS POSSIBLE!"
 		echo "[FATAL] THIS SYSTEM SHOULD NOT BE IN PRODUCTION USE BEYOND THIS POINT!"
 		echo "[FATAL] THERE IS A VERY VALID REASON EVERY SINGLE ONE OF THESE LINES IS MARKED CRITICAL!"
 		echo "[FATAL] THIS SCRIPT IS NOW GOING TO EXIT! I HIGHLY SUGGEST RUNNING 'sudo poweroff'!"
-		echo "[FATAL] PLEASE PRESS ENTER TO EXIT AFTER YOU HAVE READ THIS TEXT IN ITS ENTIRETY!"
-		read -r nil
-		exit
+		exit 3
 	fi
 }
 
@@ -253,11 +260,8 @@ ask_restart () {
 		;;
 		n*)
 			echo "Thank you for using Giantvince1's Minecraft server startup automater!"
-			echo "We hope to see you soon! Exiting script in 5..."
-			sleep 1
-			countdown 4
-			invalid=0
-			exit
+			echo "We hope to see you soon! Exiting script now."
+			exit 1
 		;;
 		*)
 			echo "Invalid choice. Your choices are yes (Y) or no (N)."
@@ -285,53 +289,10 @@ newserver () {
 			invalid=0
 		;;
 		n*)
-			if [ "$(pwd)" = "$olddir" ]; then
-				echo "You are ALREADY in the old directory! Specifying no here means NO SERVER WILL BE MADE!"
-				echo "Are you 100% sure you wish to stop the creation of a fresh Minecraft server? (Y/N)"
-				read -r forceno
-				case $forceno in
-					y*)
-						echo "You have forbidden this script to create ANY new servers despite none existing."
-						echo "Exiting script due to no valid server found, AND new server init forced off."
-						echo "Press enter to exit..."
-						read -r nil
-						invalid=0
-						exit
-					;;
-					n*)
-						echo "You have indicated you DO wish to create a new server, but are unsure where."
-						echo "Because of this, I will not proceed as I am; however I WILL display my variables."
-						echo "I am doing this so that you may be able to receive support from the author, Giantvince1."
-						echo "serverdir: "$serverdir
-						echo "olddir: "$olddir
-						echo "download: "$download
-						echo "mcver: "$mcver
-						echo "baseurl: "$baseurl
-						echo "build: "$build
-						echo "dlbuild: "$dlbuild
-						echo "jarname: "$jarname
-						echo "koops: "$koops
-						echo "Please provide ALL output from this script if you require assistance with a problem!"
-						echo "I have to be able to determine WHERE the script failed in particular to know what to look at."
-						echo "I am 100% certain I did not create this thing in a day, nor do I have it memorized."
-						echo "Press enter to exit..."
-						read -r nil
-						invalid=0
-						exit
-					;;
-					*)
-						echo "[WARN] Invalid choice. Your options are yes (Y) or no (N)."
-						invalid=1
-					;;
-				esac
-			else
-				echo "Per your request, this server will NOT be attempting to start a new server here."
-				echo "This script will instead start the server found in the directory:"
-				cd $olddir
-				pwd
-				echo "Successfully went back to the above path, continuing execution of script..."
-			fi
+			echo "Per your request, this server will NOT be attempting to start a new server."
+			echo "This script will now exit as there is no valid server to start up with."
 			invalid=0
+			exit 1
 		;;
 		*)
 			echo "[WARN] Invalid choice. Your options are yes (Y) or no (N)."
@@ -396,9 +357,8 @@ createpath () {
 				echo "[ERROR] Since I am unable to start a server which I cannot access,"
 				echo "[ERROR] and you, the user, have specified to try the specified path anyway,"
 				echo "[ERROR] I am NOT going to go to my starting path and start the one that lives there."
-				echo "Please press enter to exit..."
-				read -r nil
-				exit
+				echo "[ERROR] This script is now going to exit."
+				exit 2
 			else
 				cd $serverdir
 				echo "The specified path was successfully created, and your user has write access!"
@@ -441,10 +401,9 @@ ask_modify () {
 				echo "Since you plan on changing things, this script will not loop."
 			fi
 			echo "Once you finish editing the variables, please restart the script manually."
-			echo "Press enter to exit..."
-			read -r nil
+			echo "This script is now going to exit to allow you to modify its variables."
 			invalid=0
-			exit
+			exit 0
 		;;
 		n*)
 			if [ $loopcounter -gt 1 ]; then
@@ -472,18 +431,19 @@ ask_modify () {
 # You can edit the text in the echo commands to say what you want and/or need, but keep the meaning similar!
 # Otherwise you may very well confuse someone who uses your modified version of this script.
 after_server_exit () {
-	while [ $serverexit = 0 ]; do
+	if [ $serverexit = 0 ]; then
 		echo "The server has been shut down. Do you wish to change any variables? (Y/N)"
 		ask_modify
-	done
-	echo "The server has encountered some sort of error. Please check the console logs."
-	echo "This script will NOT be offering you the ability to restart the server."
-	echo "I recommend you look through the server logs and look for errors."
-	echo "This script will exit, however you may still read the server console log."
-	echo "This script exiting itself should not close the terminal window."
-	echo "However, in case that were to happen, there is a failsafe in this script."
-	echo "Press enter to exit..."
-	read -r nil
+		while [ $invalid = 1 ]; do
+			ask_modify
+		done
+	else
+		echo "The server has encountered some sort of error. Please check the console logs."
+		echo "This script will NOT be offering you the ability to restart the server."
+		echo "I recommend you look through the server logs and look for errors."
+		echo "This script will exit, however you may still read the server console log."
+		exit 2
+	fi
 }
 
 # This gigantic function is what handles all the pre-start checks for the Minecraft server.
@@ -652,8 +612,8 @@ start_function () {
 			echo "However, before doing so, ensure the .running file no longer exists."
 			echo "If it does exist, this script will think the server is running already."
 			echo "When that happens, this warning message will appear when this script is ran."
-			echo "Press enter to exit..."
-			read -r nil
+			echo "Exiting script..."
+			exit 2
 		fi
 	else
 		echo "Welcome back! It seems this isn't the first run of this server."
@@ -672,8 +632,8 @@ start_function () {
 			echo "This file MUST be edited to contain 'eula=true' on its own line."
 			echo "Please edit the file eula.txt located in the following directory:"
 			pwd
-			echo "After you've made the needed change, you may come back to this terminal."
-			ask_restart
+			echo "This script will exit. Please restart it manually after you make the needed change."
+			exit 2
 		fi
 	fi
 }
@@ -699,4 +659,3 @@ script_init () {
 	after_server_exit
 }
 script_init
-nil=$nil
