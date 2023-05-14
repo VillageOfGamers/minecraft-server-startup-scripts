@@ -7,11 +7,6 @@
 # If you wish to shrink this file, the easiest way to do so, without losing any function, is to cut out the comments.
 # Any and all lines beginning with a # EXCEPT THE TOP ONE may be removed.
 
-# Please set this variable based on whether or not you are running this script in an interactive mode.
-# By interactive, I mean you, or another human, is interacting DIRECTLY with the script!
-# If a human is NOT what is interacting with this script, then MAKE SURE THIS IS SET TO ZERO!
-interactive=1
-
 # This variable directly specifies whether or not to enable the script's Download Mode logic.
 # If this variable is set to 0, this script will NOT check for or download new server JAR releases.
 # This also means that this script CANNOT ask to re-enable this function if it is disabled here!
