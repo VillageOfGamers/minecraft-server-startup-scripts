@@ -714,7 +714,7 @@ elif [ $interactive = 0 ]; then
 			exit 1
 		fi
 		if [ $firstrun = 1 ]; then
-			java $fullarglist
+			java $fullarglist >output.log 2>error.log
 			exit 0
 		else
 			grep true ./eula.txt
@@ -728,7 +728,7 @@ elif [ $interactive = 0 ]; then
 					if [ $error = 1 ]; then
 						exit 1
 					else
-					java $fullarglist
+					java $fullarglist>output.log 2>error.log
 					serverexit=$?
 					rm ./.running
 					fi
