@@ -39,7 +39,7 @@ serverdir="./"
 # You may expand the RAM capacity further if you're REALLY wanting to stretch how much data FAWE (or normal WorldEdit) can hold in the buffer at one time.
 # Also see the comments for fullarglist below; these tips are necessary!
 jarname="./server.jar"
-arglist="-Xms16G -Xmx16G -jar $jarname"
+arglist="-Xms12G -Xmx12G -jar $jarname"
 
 # THESE VARIABLES ARE NOT TO BE TOUCHED UNLESS YOU KNOW EXACTLY WHAT YOU ARE DOING!
 # These arguments for the Java instance have been hand-tuned by the Minecraft community to provide optimal performance of the server.
@@ -115,7 +115,7 @@ start_server () {
 		exit 1
 	fi
 	if [ $firstrun = 1 ]; then
-		java $fullarglist
+		java $fullarglist >output.log 2>error.log
 		exit 0
 	else
 		grep true ./eula.txt
@@ -129,7 +129,7 @@ start_server () {
 				if [ $error = 1 ]; then
 					exit 1
 				else
-				java $fullarglist
+				java $fullarglist >output.log 2>error.log
 				serverexit=$?
 				rm ./.running
 				fi
@@ -144,6 +144,5 @@ start_server () {
 
 # These 2 lines right here are just how everything gets brought up. The exit command will force the script to reflect the exit code of the server.
 # This is so you can see what the Minecraft server's final exit status was, after having been started and stopped (or if it crashed).
-
 pre_init
 exit $serverexit

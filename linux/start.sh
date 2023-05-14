@@ -169,6 +169,12 @@ if [ $interactive = 1 ]; then
 				critical_stop
 			;;
 		esac
+		if [ $running = 1 ]; then
+			echo "[ERROR] The server has run into a crash at some point, or is running."
+			echo "[ERROR] Please fix the issue, and get rid of the .running file to proceed."
+			echo "[ERROR] This script will now exit due to the running condition..."
+			exit 2
+		fi
 		touch ./.running
 		lastexit=$?
 		catch_error
@@ -714,7 +720,7 @@ elif [ $interactive = 0 ]; then
 			exit 1
 		fi
 		if [ $firstrun = 1 ]; then
-			java $fullarglist
+			java $fullarglist >output.log 2>error.log
 			exit 0
 		else
 			grep true ./eula.txt
@@ -728,7 +734,7 @@ elif [ $interactive = 0 ]; then
 					if [ $error = 1 ]; then
 						exit 1
 					else
-					java $fullarglist
+					java $fullarglist>output.log 2>error.log
 					serverexit=$?
 					rm ./.running
 					fi

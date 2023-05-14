@@ -7,11 +7,6 @@
 # If you wish to shrink this file, the easiest way to do so, without losing any function, is to cut out the comments.
 # Any and all lines beginning with a # EXCEPT THE TOP ONE may be removed.
 
-# Please set this variable based on whether or not you are running this script in an interactive mode.
-# By interactive, I mean you, or another human, is interacting DIRECTLY with the script!
-# If a human is NOT what is interacting with this script, then MAKE SURE THIS IS SET TO ZERO!
-interactive=1
-
 # This variable directly specifies whether or not to enable the script's Download Mode logic.
 # If this variable is set to 0, this script will NOT check for or download new server JAR releases.
 # This also means that this script CANNOT ask to re-enable this function if it is disabled here!
@@ -166,6 +161,12 @@ server_start () {
 			critical_stop
 		;;
 	esac
+	if [ $running = 1 ]; then
+		echo "[ERROR] The server has run into a crash at some point, or is running."
+		echo "[ERROR] Please fix the issue, and get rid of the .running file to proceed."
+		echo "[ERROR] This script will now exit due to the running condition..."
+		exit 2
+	fi
 	touch ./.running
 	lastexit=$?
 	catch_error
