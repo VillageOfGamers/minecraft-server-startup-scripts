@@ -6,4 +6,4 @@
 # This allows the following script to be used for more than just sending stop to the Minecraft server without an interactive shell.
 rconpath="/usr/local/bin/mcrcon"
 cmd="stop"
-$rconpath -H localhost -P 25575 -p "Giantvince1" $cmd
+$rconpath -H localhost -P 25575 -p "supersecretpasswordhere" $cmd
