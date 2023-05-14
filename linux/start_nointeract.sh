@@ -115,7 +115,8 @@ start_server () {
 		exit 1
 	fi
 	if [ $firstrun = 1 ]; then
-			java $fullarglist
+		java $fullarglist
+		exit 0
 	else
 		grep true ./eula.txt
 		noeula=$?
