@@ -161,6 +161,12 @@ server_start () {
 			critical_stop
 		;;
 	esac
+	if [ $running = 1 ]; then
+		echo "[ERROR] The server has run into a crash at some point, or is running."
+		echo "[ERROR] Please fix the issue, and get rid of the .running file to proceed."
+		echo "[ERROR] This script will now exit due to the running condition..."
+		exit 2
+	fi
 	touch ./.running
 	lastexit=$?
 	catch_error
