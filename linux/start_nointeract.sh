@@ -1,5 +1,5 @@
 #!/bin/sh
-# shellcheck disable=SC2164,SC2086,SC2027,SC2269
+# shellcheck disable=SC2164,SC2086,SC2027,SC2269,SC2181,SC2034
 
 # YOU MUST KEEP THE TOP 2 LINES OF THIS FILE INTACT! LINE 1 TELLS YOUR LINUX INSTALL WHICH SHELL THIS RUNS IN!
 # LINE 2 TELLS SHELLCHECK WHICH EXACT ISSUES TO IGNORE WITHIN THIS FILE! I HAVE DEVELOPED IT WITH POSIX SH IN MIND!
@@ -116,10 +116,6 @@ start_server () {
 	fi
 	if [ $firstrun = 1 ]; then
 			java $fullarglist
-			exit 0
-		else
-			exit 1
-		fi
 	else
 		grep true ./eula.txt
 		noeula=$?
