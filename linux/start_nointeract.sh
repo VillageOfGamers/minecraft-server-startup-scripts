@@ -119,8 +119,7 @@ start_server () {
 		pid=$!
 		echo $pid > ./.pid
 		wait $pid
-		tail --pid=$pid -f ./.shell
-		rm ./.shell ./.pid
+		rm ./.pid
 		exit 0
 	else
 		grep true ./eula.txt
@@ -139,7 +138,7 @@ start_server () {
 				echo $pid > ./.pid
 				wait $pid
 				serverexit=$?
-				rm ./.running ./.shell ./.pid
+				rm ./.running ./.pid
 				fi
 			else
 				exit 1

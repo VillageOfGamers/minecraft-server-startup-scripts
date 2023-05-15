@@ -720,7 +720,11 @@ elif [ $interactive = 0 ]; then
 			exit 1
 		fi
 		if [ $firstrun = 1 ]; then
-			java $fullarglist >output.log 2>error.log
+			java $fullarglist >output.log 2>error.log &
+			pid=$!
+			echo $pid > ./.pid
+			wait $pid
+			rm ./.pid
 			exit 0
 		else
 			grep true ./eula.txt
@@ -734,9 +738,12 @@ elif [ $interactive = 0 ]; then
 					if [ $error = 1 ]; then
 						exit 1
 					else
-					java $fullarglist>output.log 2>error.log
+					java $fullarglist>output.log 2>error.log &
+					pid=$!
+					echo $pid > ./.pid
+					wait $pid
 					serverexit=$?
-					rm ./.running
+					rm ./.running ./.pid
 					fi
 				else
 					exit 1
