@@ -115,9 +115,6 @@ start_server () {
 		exit 1
 	fi
 	if [ $firstrun = 1 ]; then
-<<<<<<< HEAD
-		java $fullarglist >output.log 2>error.log
-=======
 		mkfifo ./.shell
 		java $fullarglist < ./.shell > ./.shell 2>&1 &
 		pid=$!
@@ -125,7 +122,6 @@ start_server () {
 		wait $pid
 		tail --pid=$pid -f ./.shell
 		rm ./.shell ./.pid
->>>>>>> 0fa9501 (Update start_nointeract.sh and stop.sh to include proper logic surrounding PID detection and exit status detection, as well as provide a FIFO shell to the server's own input/output system. This eliminates reliability on mcrcon entirely, as the stop command can be read into the FIFO and get sent to the server that way.)
 		exit 0
 	else
 		grep true ./eula.txt
@@ -139,15 +135,11 @@ start_server () {
 				if [ $error = 1 ]; then
 					exit 1
 				else
-<<<<<<< HEAD
-				java $fullarglist >output.log 2>error.log
-=======
 				mkfifo ./.shell
 				java $fullarglist < ./.shell > ./.shell 2>&1 &
 				pid=$!
 				echo $pid > ./.pid
 				wait $pid
->>>>>>> 0fa9501 (Update start_nointeract.sh and stop.sh to include proper logic surrounding PID detection and exit status detection, as well as provide a FIFO shell to the server's own input/output system. This eliminates reliability on mcrcon entirely, as the stop command can be read into the FIFO and get sent to the server that way.)
 				serverexit=$?
 				rm ./.running ./.shell ./.pid
 				fi
