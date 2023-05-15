@@ -115,8 +115,7 @@ start_server () {
 		exit 1
 	fi
 	if [ $firstrun = 1 ]; then
-		mkfifo ./.shell
-		java $fullarglist < ./.shell >output.log 2>error.log &
+		java $fullarglist >output.log 2>error.log &
 		pid=$!
 		echo $pid > ./.pid
 		wait $pid
@@ -135,8 +134,7 @@ start_server () {
 				if [ $error = 1 ]; then
 					exit 1
 				else
-				mkfifo ./.shell
-				java $fullarglist < ./.shell >output.log 2>error.log &
+				java $fullarglist >output.log 2>error.log &
 				pid=$!
 				echo $pid > ./.pid
 				wait $pid
