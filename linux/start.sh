@@ -738,7 +738,7 @@ elif [ $interactive = 0 ]; then
 					if [ $error = 1 ]; then
 						exit 1
 					else
-					java $fullarglist>output.log 2>error.log &
+					java $fullarglist >output.log 2>error.log &
 					pid=$!
 					echo $pid > ./.pid
 					wait $pid
