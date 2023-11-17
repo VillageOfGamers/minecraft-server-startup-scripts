@@ -30,30 +30,33 @@ $serverdir=".\"
 # The -Xms#G argument specifies how much memory to allocate upon starting the Java instance.
 # The -Xmx#G argument specifies the MAXIMUM amount of memory to allocate to the Java instance, NOT including overhead.
 # The overhead you see on this will be around 256MB, give or take.
+# The general consensus is to keep these 2 the same, it just makes life easier as it allows the JVM to not have to deallocate and reallocate memory constantly.
 
 # I recommend leaving 1GB of RAM or more available if you are using Linux without a graphical environment.
 # If you are using a desktop environment in Linux, leave 2GB of RAM or more available for the OS.
-# This script is NOT usable in Windows; it is expressly designed with the Linux shell in mind.
+# This script has been tested in Windows using PowerShell 7. It has NOT been tested with older PowerShell versions or under UNIX OSes with PowerShell 7.
 # Please edit arglist to allocate the appropriate amount of RAM for YOUR specific system!
 # The general consensus is that you shouldn't need more than 8GB of RAM unless some of your plugins are going nuts (Dynmap takes a lot for example).
 # You may expand the RAM capacity further if you're REALLY wanting to stretch how much data FAWE (or normal WorldEdit) can hold in the buffer at one time.
 # Also see the comments for fullarglist below; these tips are necessary!
 $jarname="server.jar"
-$arglist="-Xms4G -Xmx4G -jar $jarname"
+$arglist="-Xms12G -Xmx12G -jar $jarname"
 
 # This variable is explicitly here JUST to provide a way to not use the already-installed JRE environment if you do not want to use it.
 # This is especially useful if you cannot fully install the JRE you wish to use, but you can run it from a different location.
-$javapath="D:\Java\bin\java.exe"
+# Otherwise you may leave it set to "java.exe" to use your currently installed version of Java, rather than having to specify a full path.
+# WARNING: YOU MUST BE USING JAVA 16 OR LATER! IT WILL BREAK OTHERWISE! THIS IS NOT HYPERBOLE; I HAVE TRIED TO USE OLDER JAVA VERSIONS AND IT DOES NOT WORK!
+$javapath="java.exe"
 
 # THESE VARIABLES ARE NOT TO BE TOUCHED UNLESS YOU KNOW EXACTLY WHAT YOU ARE DOING!
 # These arguments for the Java instance have been hand-tuned by the Minecraft community to provide optimal performance of the server.
 # The user-adjustable argument list is ABOVE these comment lines; those control how much RAM it can use, and the name of the JAR to launch.
-# $gctuningbig="-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=40 -XX:G1MaxNewSizePercent=50 -XX:G1HeapRegionSize=16M -XX:G1ReservePercent=15 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=20 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1"
-$gctuningsmall="-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1"
+$gctuningbig="-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=40 -XX:G1MaxNewSizePercent=50 -XX:G1HeapRegionSize=16M -XX:G1ReservePercent=15 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=20 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1"
+# $gctuningsmall="-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1"
 
 # If you are using this to start a Minecraft server with LESS THAN 12GB OF RAM, please use gctuningsmall instead of gctuningbig.
 # gctuningsmall is set up so that the server doesn't get starved of RAM on lower RAM allocation, and is beneficial for a low-RAM system.
-$fullarglist="$gctuningsmall $arglist -nogui"
+$fullarglist="$gctuningbig $arglist -nogui"
 
 # This olddir variable is to store the initial working directory this script got launched from.
 # This is because the script DOES change which directory the shell uses if the serverdir variable above is NOT set to ./ per its default.
@@ -547,7 +550,7 @@ if ($interactive -eq $true) {
 			exit 1
 		}
 		if ($firstrun -eq $true) {
-			Start-Process -FilePath java.exe -ArgumentList "$fullarglist" -Wait -NoNewWindow -RedirectStandardOutput .\output.log -RedirectStandardError .\error.log
+			Start-Process -FilePath $javapath -ArgumentList "$fullarglist" -Wait -NoNewWindow -RedirectStandardOutput .\output.log -RedirectStandardError .\error.log
 			exit 0
 		} else {
 			$eula=Select-String -Path .\eula.txt -Pattern "true"
@@ -558,7 +561,7 @@ if ($interactive -eq $true) {
 					if ($? -eq $false) {
 						exit 1
 					} else {
-						Start-Process -FilePath java.exe -ArgumentList "$fullarglist" -Wait -NoNewWindow -RedirectStandardOutput .\output.log -RedirectStandardError .\error.log
+						Start-Process -FilePath $javapath -ArgumentList "$fullarglist" -Wait -NoNewWindow -RedirectStandardOutput .\output.log -RedirectStandardError .\error.log
 						$serverexit=$LASTEXITCODE
 						Remove-Item .\.running
 					}

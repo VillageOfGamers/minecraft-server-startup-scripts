@@ -4,7 +4,7 @@ This will be a collection of shell-based scripts designed to start up a Minecraf
 
 Shellscript version currently written to support BASH, DASH, ZSH, KSH, and ASH! A Windows PowerShell version has been finally made and is guaranteed to work on PowerShell 7 under Windows!
 
-I have not yet had a chance or opportunity to test the script under Windows PowerShell 5, or PowerShell 7 under Linux/MacOS at this time.
+Unfortunately, I have not yet had a chance or opportunity to test the script under Windows PowerShell 5, or PowerShell 7 under Linux/MacOS at this time.
 
 If you would like to contribute to the PowerShell script to help detect which OS you're on so that it can adapt and work correctly, please submit a pull request!
 
