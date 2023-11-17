@@ -79,7 +79,7 @@ fullarglist="$gctuningbig $arglist"
 # Note: This does NOT mean the directory the FILE sits in, it means the path your SHELL'S current working directory was at the time this script got started.
 olddir=$(pwd)
 
-base_dl_checks () {
+basedlchecks () {
 	mcver="1.19.4"
 	baseurl="https://api.papermc.io/v2/projects/paper/versions/"$mcver
 	build="$(curl -sX GET "$baseurl"/builds -H 'accept: application/json' | jq '.builds [-1].build')"
@@ -113,11 +113,11 @@ if [ $interactive = 1 ]; then
 	# I just so happen to have this file set to default to the PaperMC API at this point in time; not everyone in the world uses PaperMC, I get that.
 	# The only time you should ever need to change this URL format is if they ever change how the API works, or where you're getting your server JAR from.
 	# As of 4/12/2023, the server I have been writing and improving this script for is on version 1.19.4.
-	server_start () {
+	serverstart () {
 		if [ $download = 1 ]; then
-			base_dl_checks
+			basedlchecks
 			if [ $oldbuild != $build ]; then
-				echo "Download mode enabled. This script will replace the old one with the new one."
+				echo "Download mode enabled. This script will replace the old JAR with the new one."
 				echo "Do you wish to continue with the attempt to download the latest version? (Y/N)"
 				read -r keepdl
 				case $keepdl in
@@ -132,12 +132,31 @@ if [ $interactive = 1 ]; then
 							echo "Download of latest server version successful. Proceeding with launch."
 							echo $build > ./.version
 						else
-							echo "Download of latest version failed. This script cannot continue from here."
-							echo "Please double-check the download-related variables are correct in the script."
-							echo "Please replace "$jarname" with a valid copy, then re-execute this script."
-							echo "If you do not want to enable download mode, then set the download variable to 0."
-							echo "This script will now exit."
-							exit 2
+							echo "Download of latest version failed. However this script can continue."
+							echo "The download was attempted and did fail."
+							echo "However the filename used was '.new_server.jar', not "$jarname"."
+							echo "Because of this sanity check, the known good JAR is still available to use."
+							echo "Would you like to use the last known good JAR and continue to start the server? (Y/N)"
+							read -r useoldjar
+							case $useoldjar in
+								n*)
+									echo "You have chosen to exit upon failure to download the new build."
+									echo "This script will now exit. If the download failure persists,"
+									echo "please double-check the download variables, or disable download mode."
+									echo "You may do so by setting the download variable near the top of this script to 0."
+									exit 1
+								;;
+								y*)
+									echo "You have chosen to continue using the last known good JAR."
+									echo "This script will now delete the failed download and continue execution."
+									rm ./.new_server.jar
+									invalid=0
+								;;
+								*)
+									echo "Invalid choice. Your choices are yes (Y) or no (N)."
+									invalid=1
+								;;
+							esac
 						fi
 						invalid=0
 					;;
@@ -259,18 +278,18 @@ if [ $interactive = 1 ]; then
 	# This small function is simply to ask the user if they wish to restart the Minecraft server.
 	# I have a catch-all case for key presses that are NOT a Y or N, which redirect the user through the question again.
 	# This is not meant to be an annoyance, but rather a simple way to make sure the user has properly chosen an answer.
-	ask_restart () {
+	askrestart () {
 		read -r restart
 		case $restart in
 			y*)
 				echo "Beginning restart procedure. Skipping warning about closing running shell."
-				server_start
+				serverstart
 				invalid=0
 			;;
 			n*)
 				echo "Thank you for using Giantvince1's Minecraft server startup automater!"
 				echo "We hope to see you soon! Exiting script now."
-				exit 1
+				exit 0
 			;;
 			*)
 				echo "Invalid choice. Your choices are yes (Y) or no (N)."
@@ -298,7 +317,7 @@ if [ $interactive = 1 ]; then
 				invalid=0
 			;;
 			n*)
-				echo "Per your request, this server will NOT be attempting to start a new server."
+				echo "Per your request, this script will NOT be attempting to start a new server."
 				echo "This script will now exit as there is no valid server to start up with."
 				invalid=0
 				exit 1
@@ -367,7 +386,7 @@ if [ $interactive = 1 ]; then
 					echo "[ERROR] and you, the user, have specified to try the specified path anyway,"
 					echo "[ERROR] I am NOT going to go to my starting path and start the one that lives there."
 					echo "[ERROR] This script is now going to exit."
-					exit 2
+					exit 1
 				else
 					cd $serverdir
 					echo "The specified path was successfully created, and your user has write access!"
@@ -400,7 +419,7 @@ if [ $interactive = 1 ]; then
 	# The reason being, if they DO make a change to this file while it is in use, the change will NOT be reflected in the running shell.
 	# Instead, the shell will retain the old copy of the file and continue to use THAT one to try to run the Minecraft server.
 	# So, I have to ask if the user plans to modify the file so that I can ensure the script gets stopped and restarted properly.
-	ask_modify () {
+	askmodify () {
 		read -r changes
 		case $changes in
 			y*)
@@ -424,9 +443,9 @@ if [ $interactive = 1 ]; then
 				echo "It will also only do so each time the user WANTS it to. It will not forkbomb."
 				echo "Would you like to restart the Minecraft server? (Y/N)"
 				invalid=0
-				ask_restart
+				askrestart
 				while [ $invalid = 1 ]; do
-					ask_restart
+					askrestart
 				done
 			;;
 			*)
@@ -439,12 +458,12 @@ if [ $interactive = 1 ]; then
 	# This function handles the post-server-run side of things, including user interaction and looping.
 	# You can edit the text in the echo commands to say what you want and/or need, but keep the meaning similar!
 	# Otherwise you may very well confuse someone who uses your modified version of this script.
-	after_server_exit () {
+	afterserverexit () {
 		if [ $serverexit = 0 ]; then
 			echo "The server has been shut down. Do you wish to change any variables? (Y/N)"
-			ask_modify
+			askmodify
 			while [ $invalid = 1 ]; do
-				ask_modify
+				askmodify
 			done
 		else
 			echo "The server has encountered some sort of error. Please check the console logs."
@@ -461,7 +480,7 @@ if [ $interactive = 1 ]; then
 	# You may change the text inside the echo commands, but I recommend you keep their meaning similar!
 	# You may easily confuse someone using your modified version of this script.
 	# The echo commands provide useful information to the end user based on the conditions the checks find.
-	start_function () {
+	realstart () {
 		loopcounter=$((loopcounter+1))
 		if [ $serverdir = ./ ]; then
 			test -f $jarname
@@ -592,7 +611,7 @@ if [ $interactive = 1 ]; then
 			echo "Otherwise the server will refuse to run entirely, and tell you why."
 			countdown 10
 			echo "First run commencing..."
-			server_start
+			serverstart
 			echo "The first run is now over! Please accept the EULA by editing the eula.txt file."
 			echo "Then come back to this terminal and press any key to launch the server!"
 			read -r nil
@@ -609,7 +628,7 @@ if [ $interactive = 1 ]; then
 					;;
 			esac
 			if [ $running = 0 ]; then
-				server_start
+				serverstart
 			else
 				echo "The server is currently running, or has abruptly crashed."
 				echo "This may happen if you close the terminal window whilst the server is running."
@@ -635,19 +654,19 @@ if [ $interactive = 1 ]; then
 			if [ $noeula = 0 ]; then
 				echo "Starting server in 3 seconds."
 				countdown 3
-				server_start
+				serverstart
 			else
 				echo "The EULA file has not been edited to say true."
 				echo "This file MUST be edited to contain 'eula=true' on its own line."
 				echo "Please edit the file eula.txt located in the following directory:"
 				pwd
 				echo "This script will exit. Please restart it manually after you make the needed change."
-				exit 2
+				exit 1
 			fi
 		fi
 	}
 
-	script_init () {
+	scriptinit () {
 	# These echo lines are to inform the user on how to prevent the server from being killed upon closing the terminal.
 	# You can disable the warning if you wish via the screenwarn variable at the top of this script. Just set it to 0.
 		if [ $screenwarn = 1 ]; then
@@ -664,36 +683,36 @@ if [ $interactive = 1 ]; then
 			echo "Warning regarding parent/child process relations in Linux disabled."
 			echo "Executing main body of script..."
 		fi
-		start_function
-		after_server_exit
+		realstart
+		afterserverexit
 	}
-	script_init
+	scriptinit
 elif [ $interactive = 0 ]; then
-	# This function is the non-interactive version of the script_init function, designed to just get the server's pre-checks in place.
-	# This bit also handles the download mode checks, and reuses the exact variables specified from the base_dl_checks function.
-	pre_init () {
+	# This function is the non-interactive version of the scriptinit function, designed to just get the server's pre-checks in place.
+	# This bit also handles the download mode checks, and reuses the exact variables specified from the basedlchecks function.
+	preinit () {
 		if [ $download = 1 ]; then
-			base_dl_checks
+			basedlchecks
 			if [ $oldbuild != $build ]; then
 				wget $dlbuild -O $jarname > /dev/null 2>&1
 				if [ $? = 0 ]; then
 					echo $build > ./.version
-					start_server
+					startserver
 				else
 					exit 1
 				fi
 			else
-				start_server
+				startserver
 			fi
 		else
-			start_server
+			startserver
 		fi
 	}
 
 	# This function below handles the preliminary checks to start the server, and will get everything up and running.
 	# It also directly handles all of the necessary logic to detect any problems within the environment and exit with status 1 if a problem arises.
 	# This is all optimized to be run by a background script or service, and not something the user faces head-on.
-	start_server () {
+	startserver () {
 		if [ $serverdir = ./ ]; then
 			test -f $jarname
 			error=$?
@@ -738,12 +757,12 @@ elif [ $interactive = 0 ]; then
 					if [ $error = 1 ]; then
 						exit 1
 					else
-					java $fullarglist >output.log 2>error.log &
-					pid=$!
-					echo $pid > ./.pid
-					wait $pid
-					serverexit=$?
-					rm ./.running ./.pid
+						java $fullarglist >output.log 2>error.log &
+						pid=$!
+						echo $pid > ./.pid
+						wait $pid
+						serverexit=$?
+						rm ./.running ./.pid
 					fi
 				else
 					exit 1
@@ -755,6 +774,6 @@ elif [ $interactive = 0 ]; then
 	}
 	# These 2 lines right here are just how everything gets brought up. The exit command will force the script to reflect the exit code of the server.
 	# This is so you can see what the Minecraft server's final exit status was, after having been started and stopped (or if it crashed).
-	pre_init
+	preinit
 	exit $serverexit
 fi
