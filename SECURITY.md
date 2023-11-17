@@ -9,8 +9,9 @@ I will provide support to those who use older versions of the script, but I will
 | Version       | Supported          |
 | ------------- | ------------------ |
 | Latest master | :white_check_mark: |
-| 1.3+          | :white_check_mark: |
-| < 1.3         | :x:                |
+| Latest devel  | :white_check_mark: |
+| 2.0+          | :white_check_mark: |
+| < 2.0         | :x:                |
 
 ## Reporting a Vulnerability
 
