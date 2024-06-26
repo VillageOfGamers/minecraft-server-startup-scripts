@@ -1,6 +1,6 @@
 # Minecraft Server Startup Scripts
 
-This will be a collection of shell-based scripts designed to start up a Minecraft server, as well as perform sanity checks to ensure everything operates smoothly.
+This is a collection of shell-based scripts designed to start up a Minecraft server, as well as perform sanity checks to ensure everything operates smoothly.
 
 Shellscript version currently written to support BASH, DASH, ZSH, KSH, and ASH! A Windows PowerShell version has been finally made and is guaranteed to work on PowerShell 7 under Windows!
 
