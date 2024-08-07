@@ -40,7 +40,7 @@ $serverdir=".\"
 # You may expand the RAM capacity further if you're REALLY wanting to stretch how much data FAWE (or normal WorldEdit) can hold in the buffer at one time.
 # Also see the comments for fullarglist below; these tips are necessary!
 $jarname="server.jar"
-$arglist="-Xms12G -Xmx12G -jar $jarname"
+$arglist="-Xms16G -Xmx16G -jar $jarname"
 
 # This variable is explicitly here JUST to provide a way to not use the already-installed JRE environment if you do not want to use it.
 # This is especially useful if you cannot fully install the JRE you wish to use, but you can run it from a different location.
@@ -52,7 +52,7 @@ $javapath="java.exe"
 # These arguments for the Java instance have been hand-tuned by the Minecraft community to provide optimal performance of the server.
 # The user-adjustable argument list is ABOVE these comment lines; those control how much RAM it can use, and the name of the JAR to launch.
 $gctuningbig="-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=40 -XX:G1MaxNewSizePercent=50 -XX:G1HeapRegionSize=16M -XX:G1ReservePercent=15 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=20 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1"
-# $gctuningsmall="-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1"
+$gctuningsmall="-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1"
 
 # If you are using this to start a Minecraft server with LESS THAN 12GB OF RAM, please use gctuningsmall instead of gctuningbig.
 # gctuningsmall is set up so that the server doesn't get starved of RAM on lower RAM allocation, and is beneficial for a low-RAM system.
@@ -68,7 +68,7 @@ $olddir=Get-Location
 # The only time you should ever need to change this URL format is if they ever change how the API works, or where you're getting your server JAR from.
 # As of 8/23/2023, the server I have been writing and improving this script for is on version 1.20.1.
 function basedlchecks {
-	$mcver="1.20.1"
+	$release="1.21"
 	$baseurl="https://api.papermc.io/v2/projects/paper/versions/$mcver"
 	Invoke-WebRequest "$baseurl/builds/" -UseBasicParsing -OutFile .\.parseme.json
 	$getbuilds=Get-Content .\.parseme.json | ConvertFrom-Json
@@ -81,7 +81,7 @@ function basedlchecks {
 	$remotename=$buildinfo.downloads.application.name
 	$checksum=$buildinfo.downloads.application.sha256
 	try {
-		$versionstring=$(Select-String . .\.version)
+		$versionstring=$(Select-String . .\.build)
 	}
 	catch {
 		$oldbuild=0
@@ -89,12 +89,22 @@ function basedlchecks {
 	if ($null -ne $versionstring) {
 		$oldbuild=$versionstring.Line
 	}
+	try {
+		$releasestring=$(Select-String . .\.release)
+	}
+	catch {
+		$oldrelease=$null
+	}
+	if ($null -ne $releasestring) {
+		$oldrelease=$releasestring.Line
+	}
 	$dlarray=@() # init empty array to pass all needed vars out in one shot
 	$dlarray+=$baseurl # baseurl is now index 0 of dlarray.
 	$dlarray+=$buildnum # buildnum is now index 1 of dlarray.
 	$dlarray+=$remotename # remotename is now index 2 of dlarray.
 	$dlarray+=$oldbuild # oldbuild is now index 3 of dlarray.
 	$dlarray+=$checksum # checksum is now index 4 of dlarray.
+	$dlarray+=$oldrelease # oldrelease is now index 5 of dlarray.
 	return $dlarray # actually pass the vars out
 }
 
@@ -132,7 +142,8 @@ if ($interactive -eq $true) {
 			$remotename=$dlarray[2]
 			$oldbuild=$dlarray[3]
 			$checksum=$dlarray[4]
-			if ($oldbuild -ne $buildnum) {
+			$oldrelease=$dlarray[5]
+			if ($oldbuild -ne $buildnum) -or ($oldrelease -ne $release) {
 				function keepdl ($baseurl ,$buildnum ,$remotename ,$checksum) {
 					Write-Host "Download mode enabled. This script will replace the old JAR with the new one."
 					Write-Host "Do you wish to continue with the attempt to download the latest version? (Y/N)"
@@ -146,7 +157,8 @@ if ($interactive -eq $true) {
 							$realsum=$result.Hash
 							if ($realsum -eq $checksum) {
 								Write-Host "Download of latest server version successful. Proceeding with launch."
-								Write-Host $buildnum > .\.version
+								Write-Host $buildnum > .\.build
+								Write-Host $release > .\.release
 								Remove-Item -Path "$jarname" -ErrorAction SilentlyContinue
 								Move-Item -Path ".new_server.jar" -Destination "$jarname"
 							} else {
@@ -581,10 +593,12 @@ if ($interactive -eq $true) {
 			$buildnum=$dlarray[1]
 			$remotename=$dlarray[2]
 			$oldbuild=$dlarray[3]
-			if ($oldbuild -ne $buildnum) {
+			$oldrelease=$dlarray[5]
+			if ($oldbuild -ne $buildnum) -or ($oldrelease -ne $release) {
 				Invoke-WebRequest "$baseurl/builds/$buildnum/downloads/$remotename" -OutFile ".new_server.jar"
 				if ($? -eq $true) {
-					Write-Host $build > .\.version
+					Write-Host $build > .\.build
+					Write-Host $release > .\.release
 					startserver
 				} else {
 					exit 1

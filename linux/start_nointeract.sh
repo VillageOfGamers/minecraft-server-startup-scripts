@@ -39,7 +39,7 @@ serverdir="./"
 # You may expand the RAM capacity further if you're REALLY wanting to stretch how much data FAWE (or normal WorldEdit) can hold in the buffer at one time.
 # Also see the comments for fullarglist below; these tips are necessary!
 jarname="./server.jar"
-arglist="-Xms12G -Xmx12G -jar $jarname"
+arglist="-Xms16G -Xmx16G -jar $jarname"
 
 # THESE VARIABLES ARE NOT TO BE TOUCHED UNLESS YOU KNOW EXACTLY WHAT YOU ARE DOING!
 # These arguments for the Java instance have been hand-tuned by the Minecraft community to provide optimal performance of the server.
@@ -63,15 +63,17 @@ olddir=$(pwd)
 
 pre_init () {
 	if [ $download = 1 ]; then
-		mcver="1.19.4"
+		release="1.21"
 		baseurl="https://api.papermc.io/v2/projects/paper/versions/"$mcver
 		build="$(curl -sX GET "$baseurl"/builds -H 'accept: application/json' | jq '.builds [-1].build')"
 		dlbuild=$baseurl"/builds/"$build"/downloads/paper-"$mcver"-"$build".jar"
-		oldbuild=$(grep . ./.version)
-		if [ $oldbuild != $build ]; then
+		oldbuild=$(grep . ./.build)
+		oldrelease=$(grep . ./.release)
+		if [ $oldbuild != $build || $oldrelease != $release ]; then
 			wget $dlbuild -O $jarname > /dev/null 2>&1
 			if [ $? = 0 ]; then
-				echo $build > ./.version
+				echo $build > ./.build
+				echo $release > ./.release
 				start_server
 			else
 				exit 1

@@ -80,11 +80,12 @@ fullarglist="$gctuningbig $arglist"
 olddir=$(pwd)
 
 basedlchecks () {
-	mcver="1.19.4"
+	release="1.21"
 	baseurl="https://api.papermc.io/v2/projects/paper/versions/"$mcver
 	build="$(curl -sX GET "$baseurl"/builds -H 'accept: application/json' | jq '.builds [-1].build')"
 	dlbuild=$baseurl"/builds/"$build"/downloads/paper-"$mcver"-"$build".jar"
-	oldbuild=$(grep . ./.version)
+	oldbuild=$(grep . ./.build)
+	oldrelease=$(grep . ./.release)
 }
 
 if [ $interactive = 1 ]; then
@@ -116,7 +117,7 @@ if [ $interactive = 1 ]; then
 	serverstart () {
 		if [ $download = 1 ]; then
 			basedlchecks
-			if [ $oldbuild != $build ]; then
+			if [ $oldbuild != $build  || $oldrelease != $release ]; then
 				echo "Download mode enabled. This script will replace the old JAR with the new one."
 				echo "Do you wish to continue with the attempt to download the latest version? (Y/N)"
 				read -r keepdl
@@ -130,7 +131,8 @@ if [ $interactive = 1 ]; then
 						wget $dlbuild -O $jarname > /dev/null 2>&1
 						if [ $? = 0 ]; then
 							echo "Download of latest server version successful. Proceeding with launch."
-							echo $build > ./.version
+							echo $build > ./.build
+							echo $release > ./.release
 						else
 							echo "Download of latest version failed. However this script can continue."
 							echo "The download was attempted and did fail."
@@ -693,10 +695,11 @@ elif [ $interactive = 0 ]; then
 	preinit () {
 		if [ $download = 1 ]; then
 			basedlchecks
-			if [ $oldbuild != $build ]; then
+			if [ $oldbuild != $build || $oldrelease != $release ]; then
 				wget $dlbuild -O $jarname > /dev/null 2>&1
 				if [ $? = 0 ]; then
-					echo $build > ./.version
+					echo $build > ./.build
+					echo $release > ./.release
 					startserver
 				else
 					exit 1
