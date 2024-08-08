@@ -69,7 +69,7 @@ pre_init () {
 		dlbuild=$baseurl"/builds/"$build"/downloads/paper-"$mcver"-"$build".jar"
 		oldbuild=$(grep . ./.build)
 		oldrelease=$(grep . ./.release)
-		if [ $oldbuild != $build || $oldrelease != $release ]; then
+		if [ $oldbuild != $build ] || [ $oldrelease != $release ]; then
 			wget $dlbuild -O $jarname > /dev/null 2>&1
 			if [ $? = 0 ]; then
 				echo $build > ./.build

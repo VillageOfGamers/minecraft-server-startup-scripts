@@ -117,7 +117,7 @@ if [ $interactive = 1 ]; then
 	serverstart () {
 		if [ $download = 1 ]; then
 			basedlchecks
-			if [ $oldbuild != $build  || $oldrelease != $release ]; then
+			if [ $oldbuild != $build ] || [ $oldrelease != $release ]; then
 				echo "Download mode enabled. This script will replace the old JAR with the new one."
 				echo "Do you wish to continue with the attempt to download the latest version? (Y/N)"
 				read -r keepdl
@@ -695,7 +695,7 @@ elif [ $interactive = 0 ]; then
 	preinit () {
 		if [ $download = 1 ]; then
 			basedlchecks
-			if [ $oldbuild != $build || $oldrelease != $release ]; then
+			if [ $oldbuild != $build ] || [ $oldrelease != $release ]; then
 				wget $dlbuild -O $jarname > /dev/null 2>&1
 				if [ $? = 0 ]; then
 					echo $build > ./.build
