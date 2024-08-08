@@ -64,9 +64,9 @@ olddir=$(pwd)
 pre_init () {
 	if [ $download = 1 ]; then
 		release="1.21"
-		baseurl="https://api.papermc.io/v2/projects/paper/versions/"$mcver
-		build="$(curl -sX GET "$baseurl"/ -H 'accept: application/json' | jq '.builds [-1].build')"
-		dlbuild=$baseurl"/builds/"$build"/downloads/paper-"$mcver"-"$build".jar"
+		baseurl="https://api.papermc.io/v2/projects/paper/versions/"$release
+		build="$(curl -sX GET "$baseurl"/ -H 'accept: application/json' | jq '.builds [-1]')"
+		dlbuild=$baseurl"/builds/"$build"/downloads/paper-"$release"-"$build".jar"
 		oldbuild=$(grep . ./.build)
 		oldrelease=$(grep . ./.release)
 		if [ $oldbuild -ne $build ] || [ $oldrelease -ne $release ]; then

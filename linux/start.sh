@@ -81,9 +81,9 @@ olddir=$(pwd)
 
 basedlchecks () {
 	release="1.21"
-	baseurl="https://api.papermc.io/v2/projects/paper/versions/"$mcver
-	build="$(curl -sX GET "$baseurl"/ -H 'accept: application/json' | jq '.builds [-1].build')"
-	dlbuild=$baseurl"/builds/"$build"/downloads/paper-"$mcver"-"$build".jar"
+	baseurl="https://api.papermc.io/v2/projects/paper/versions/"$release
+	build="$(curl -sX GET "$baseurl"/ -H 'accept: application/json' | jq '.builds [-1]')"
+	dlbuild=$baseurl"/builds/"$build"/downloads/paper-"$release"-"$build".jar"
 	oldbuild=$(grep . ./.build)
 	oldrelease=$(grep . ./.release)
 }
@@ -128,11 +128,13 @@ if [ $interactive = 1 ]; then
 					;;
 					y*)
 						echo "Download mode confirmed by user. Continuing with download of latest JAR."
-						wget $dlbuild -O $jarname > /dev/null 2>&1
+						wget $dlbuild -O ./.new_server.jar > /dev/null 2>&1
 						if [ $? = 0 ]; then
 							echo "Download of latest server version successful. Proceeding with launch."
 							echo $build > ./.build
 							echo $release > ./.release
+							rm $jarname
+							mv ./.new_server.jar $jarname
 						else
 							echo "Download of latest version failed. However this script can continue."
 							echo "The download was attempted and did fail."
