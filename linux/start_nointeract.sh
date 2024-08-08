@@ -65,11 +65,11 @@ pre_init () {
 	if [ $download = 1 ]; then
 		release="1.21"
 		baseurl="https://api.papermc.io/v2/projects/paper/versions/"$mcver
-		build="$(curl -sX GET "$baseurl"/builds -H 'accept: application/json' | jq '.builds [-1].build')"
+		build="$(curl -sX GET "$baseurl"/ -H 'accept: application/json' | jq '.builds [-1].build')"
 		dlbuild=$baseurl"/builds/"$build"/downloads/paper-"$mcver"-"$build".jar"
 		oldbuild=$(grep . ./.build)
 		oldrelease=$(grep . ./.release)
-		if [ $oldbuild != $build ] || [ $oldrelease != $release ]; then
+		if [ $oldbuild -ne $build ] || [ $oldrelease -ne $release ]; then
 			wget $dlbuild -O $jarname > /dev/null 2>&1
 			if [ $? = 0 ]; then
 				echo $build > ./.build

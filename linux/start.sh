@@ -82,7 +82,7 @@ olddir=$(pwd)
 basedlchecks () {
 	release="1.21"
 	baseurl="https://api.papermc.io/v2/projects/paper/versions/"$mcver
-	build="$(curl -sX GET "$baseurl"/builds -H 'accept: application/json' | jq '.builds [-1].build')"
+	build="$(curl -sX GET "$baseurl"/ -H 'accept: application/json' | jq '.builds [-1].build')"
 	dlbuild=$baseurl"/builds/"$build"/downloads/paper-"$mcver"-"$build".jar"
 	oldbuild=$(grep . ./.build)
 	oldrelease=$(grep . ./.release)
