@@ -8,11 +8,12 @@ I will provide support to those who use older versions of the script, but I will
 | --------------- | ------------------ | ------------------ |
 | Latest `master` | :white_check_mark: | 4                  |
 | Latest `devel`  | :white_check_mark: | Always changes.    |
-| 1.4             | :white_check_mark: | 5                  |
-| 1.3             | :x:                | 4                  |
+| 1.5             | :white_check_mark: | 5                  |
+| 1.4             | :x:                | 4                  |
+| 1.3             | :x:                | 3                  |
 | 1.2.1           | :x:                | 2                  |
 | 1.2.0           | :x:                | 1                  |
-| <= 1.1          | :x:                | 3                  |
+| <= 1.1          | :x:                | 2                  |
 
 # Reporting a Vulnerability
 
