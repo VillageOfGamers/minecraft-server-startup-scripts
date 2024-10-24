@@ -4,11 +4,12 @@ I will only support the latest version of the script at any given moment, as any
 
 I will provide support to those who use older versions of the script, but I will not update against older revisions explicitly.
 
-| Version        | Supported          |
-| -------------- | ------------------ |
-| Latest `main`  | :white_check_mark: |
-| 1.5            | :white_check_mark: |
-| Older versions | :x:                |
+| Version       | Supported          |
+| ------------- | ------------------ |
+| Latest `main` | :white_check_mark: |
+| 2.0           | :white_check_mark: |
+| 1.x           | :x:                |
+| 0.x           | :x:                |
 
 # Reporting a Vulnerability
 
